@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/echo9et/alerting/cmd/server/server"
+	"github.com/echo9et/alerting/cmd/server/coreserver"
 )
 
 func main() {
-	if err := server.Run(); err != nil {
+	if err := coreserver.Run(); err != nil {
 		panic(err)
 	}
 }
