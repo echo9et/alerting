@@ -50,11 +50,8 @@ func sendMetric(name string, value interface{}) {
 	r := bytes.NewReader([]byte(``))
 	resp, err := http.Post(url, "text/plain", r)
 	if err != nil {
-		fmt.Println(err)
+		return
 	}
-	// else {
-	// fmt.Println(resp.Status)
-	// }
 	defer resp.Body.Close()
 }
 func updateMetrics(m *metrics, reportInterval int, pullInterval int) {
@@ -68,7 +65,7 @@ func updateMetrics(m *metrics, reportInterval int, pullInterval int) {
 		time.Sleep(time.Second * time.Duration(reportInterval))
 
 		counter += reportInterval
-		if counter > pullInterval {
+		if counter >= pullInterval {
 			counter = 0
 			m.pullMetrics()
 		}

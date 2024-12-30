@@ -1,10 +1,12 @@
 package handlers
 
 import (
-	"echo9et/cmd/server/storage"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/echo9et/alerting/cmd/server/storage"
 )
 
 var storageInstance = storage.NewMemStorage()
@@ -24,6 +26,7 @@ func handlerCounters(name, value string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(name, value)
 	storageInstance.Counters[name] += iValue // Увеличиваем значение счетчика
 	return nil
 }
