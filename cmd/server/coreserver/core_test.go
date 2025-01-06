@@ -56,7 +56,7 @@ func TestStatusHandler(t *testing.T) {
 			request := httptest.NewRequest(test.want.method, test.want.url, nil)
 			request.Header.Add("Content-Type", test.want.contentType)
 			w := httptest.NewRecorder()
-			Webhook(w, request)
+			setMetricHandle(w, request)
 
 			res := w.Result()
 			println(res.Status)

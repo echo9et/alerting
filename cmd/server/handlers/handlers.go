@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/echo9et/alerting/cmd/server/storage"
+	"github.com/go-chi/chi/v5"
 )
 
 var storageInstance = storage.NewMemStorage()
@@ -40,26 +40,33 @@ func handlerGauge(name, value string) error {
 	return nil
 }
 
-func HandlerMetrics(w http.ResponseWriter, r *http.Request) error {
-	param := strings.Split(r.URL.Path, "/")
-
-	if len(param) < 2 || len(param) > 3 {
-		w.WriteHeader(http.StatusBadRequest)
-		return nil
+func GetCounterValue(name string) (string, bool) {
+	value, ok := storageInstance.Counters[name]
+	if ok {
+		return fmt.Sprint(value), true
 	}
-	typeMetric := param[0]
-	handlerMetric, ok := supportMetrics[typeMetric]
+	return "", false
+}
+
+func GetGaugeValue(name string) (string, bool) {
+	value, ok := storageInstance.Gauges[name]
+	if ok {
+		return fmt.Sprint(value), true
+	}
+	return "", false
+}
+
+func GetMetrics() map[string]string {
+	return storageInstance.AllMetrics()
+}
+
+func WriteMetric(w http.ResponseWriter, r *http.Request) error {
+	handlerMetric, ok := supportMetrics[chi.URLParam(r, "type")]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		return nil
 	}
-
-	if len(param) == 2 {
-		w.WriteHeader(http.StatusNotFound)
-		return nil
-	}
-
-	name, value := param[1], param[2]
+	name, value := chi.URLParam(r, "name"), chi.URLParam(r, "value")
 	err := handlerMetric(name, value)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

@@ -50,6 +50,7 @@ func sendMetric(name string, value interface{}) {
 	r := bytes.NewReader([]byte(``))
 	resp, err := http.Post(url, "text/plain", r)
 	if err != nil {
+		fmt.Println("ERROR:", err)
 		return
 	}
 	defer resp.Body.Close()
