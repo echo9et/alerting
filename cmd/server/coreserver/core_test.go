@@ -61,6 +61,7 @@ func TestStatusHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			resp, get := testRequest(t, ts, test.want)
 			assert.Equal(t, test.want.code, resp.StatusCode)
+			resp.Body.Close()
 			print(get)
 		})
 	}
