@@ -68,10 +68,10 @@ func setMetricHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("Content-Type") != "text/plain" {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		return
-	}
+	// if r.Header.Get("Content-Type") != "text/plain" {
+	// 	w.WriteHeader(http.StatusUnsupportedMediaType)
+	// 	return
+	// }
 
 	if err := handlers.WriteMetric(w, r); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
