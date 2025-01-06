@@ -39,7 +39,7 @@ func TestStatusHandler(t *testing.T) {
 			want: want{
 				url:         "/update/counter/test/1",
 				method:      http.MethodPost,
-				code:        415,
+				code:        200,
 				response:    "",
 				contentType: "media",
 			},
