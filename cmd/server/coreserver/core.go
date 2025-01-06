@@ -10,9 +10,9 @@ import (
 
 func GetRouter() *chi.Mux {
 	router := chi.NewRouter()
-	router.Post("/", metricsHandle)
+	router.Get("/", metricsHandle)
 	router.Post("/update/{type}/{name}/{value}", setMetricHandle)
-	router.Post("/value/{type}/{name}", metricHandle)
+	router.Get("/value/{type}/{name}", metricHandle)
 	return router
 }
 
@@ -21,6 +21,10 @@ func Run() error {
 }
 
 func metricHandle(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	typ := chi.URLParam(r, "type")
 	name := chi.URLParam(r, "name")
 	var value string
@@ -42,7 +46,7 @@ func metricHandle(w http.ResponseWriter, r *http.Request) {
 }
 
 func metricsHandle(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}

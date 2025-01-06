@@ -54,6 +54,27 @@ func TestStatusHandler(t *testing.T) {
 				contentType: "text/plain",
 			},
 		},
+
+		{
+			name: "positive method test #4",
+			want: want{
+				url:         "/",
+				method:      http.MethodGet,
+				code:        200,
+				response:    "",
+				contentType: "text/plain",
+			},
+		},
+		{
+			name: "negative method test #5",
+			want: want{
+				url:         "/",
+				method:      http.MethodPost,
+				code:        405,
+				response:    "",
+				contentType: "text/plain",
+			},
+		},
 	}
 	for _, test := range tests {
 		ts := httptest.NewServer(GetRouter())
