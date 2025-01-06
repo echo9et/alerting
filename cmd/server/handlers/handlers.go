@@ -73,6 +73,5 @@ func WriteMetric(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	print(http.StatusOK, name, value, "\n")
 	return nil
 }

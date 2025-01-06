@@ -80,10 +80,10 @@ func TestStatusHandler(t *testing.T) {
 		ts := httptest.NewServer(GetRouter())
 		defer ts.Close()
 		t.Run(test.name, func(t *testing.T) {
-			resp, get := testRequest(t, ts, test.want)
+			resp, _ := testRequest(t, ts, test.want)
 			assert.Equal(t, test.want.code, resp.StatusCode)
 			resp.Body.Close()
-			print(get)
+			// print(get)
 		})
 	}
 }

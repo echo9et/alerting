@@ -38,8 +38,8 @@ func metricHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if status {
-		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte(fmt.Sprintln(name, value)))
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintln(value)))
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -51,10 +51,10 @@ func metricsHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("Content-Type") != "text/plain" {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		return
-	}
+	// if r.Header.Get("Content-Type") != "text/plain" {
+	// 	w.WriteHeader(http.StatusUnsupportedMediaType)
+	// 	return
+	// }
 	metrics := handlers.GetMetrics()
 	for k, v := range metrics {
 		w.Write([]byte(fmt.Sprintln(k, v)))
