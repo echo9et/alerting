@@ -26,7 +26,6 @@ func handlerCounters(name, value string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(name, value)
 	storageInstance.Counters[name] += iValue // Увеличиваем значение счетчика
 	return nil
 }
@@ -74,5 +73,6 @@ func WriteMetric(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	// print(name, value, "\n")
 	return nil
 }
