@@ -1,21 +1,25 @@
 package coreserver
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
+type want struct {
+	code        int
+	url         string
+	method      string
+	response    string
+	contentType string
+}
+
 func TestStatusHandler(t *testing.T) {
-	type want struct {
-		code        int
-		url         string
-		method      string
-		response    string
-		contentType string
-	}
+
 	tests := []struct {
 		name string
 		want want
@@ -31,7 +35,7 @@ func TestStatusHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "positive method test #1",
+			name: "negative method test #2",
 			want: want{
 				url:         "/update/counter/test/1",
 				method:      http.MethodPost,
@@ -41,7 +45,7 @@ func TestStatusHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "negative method test #1",
+			name: "negative method test #3",
 			want: want{
 				url:         "/update/counter/test/1",
 				method:      http.MethodGet,
@@ -52,16 +56,26 @@ func TestStatusHandler(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
+		ts := httptest.NewServer(GetRouter())
+		defer ts.Close()
 		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(test.want.method, test.want.url, nil)
-			request.Header.Add("Content-Type", test.want.contentType)
-			w := httptest.NewRecorder()
-			setMetricHandle(w, request)
-
-			res := w.Result()
-			println(res.Status)
-			assert.Equal(t, test.want.code, res.StatusCode)
-			defer res.Body.Close()
+			resp, _ := testRequest(t, ts, test.want)
+			assert.Equal(t, test.want.code, resp.StatusCode)
 		})
 	}
+}
+
+func testRequest(t *testing.T, ts *httptest.Server, testData want) (*http.Response, string) {
+	req, err := http.NewRequest(testData.method, ts.URL+testData.url, nil)
+	req.Header.Add("Content-Type", testData.contentType)
+	require.NoError(t, err)
+
+	resp, err := ts.Client().Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	return resp, string(respBody)
 }

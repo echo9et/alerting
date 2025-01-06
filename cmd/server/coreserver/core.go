@@ -8,12 +8,16 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func Run() error {
+func GetRouter() *chi.Mux {
 	router := chi.NewRouter()
 	router.Post("/", metricsHandle)
 	router.Post("/update/{type}/{name}/{value}", setMetricHandle)
 	router.Post("/value/{type}/{name}", metricHandle)
-	return http.ListenAndServe(":8080", router)
+	return router
+}
+
+func Run() error {
+	return http.ListenAndServe(":8080", GetRouter())
 }
 
 func metricHandle(w http.ResponseWriter, r *http.Request) {
