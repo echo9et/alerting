@@ -5,7 +5,8 @@ import (
 )
 
 func main() {
-	if err := coreserver.Run(); err != nil {
+	PaeseFlags()
+	if err := coreserver.Run(*addrServer); err != nil {
 		panic(err)
 	}
 }

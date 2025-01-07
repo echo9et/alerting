@@ -16,8 +16,8 @@ func GetRouter() *chi.Mux {
 	return router
 }
 
-func Run() error {
-	return http.ListenAndServe(":8080", GetRouter())
+func Run(addr string) error {
+	return http.ListenAndServe(addr, GetRouter())
 }
 
 func metricHandle(w http.ResponseWriter, r *http.Request) {
