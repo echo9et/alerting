@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -87,11 +88,17 @@ func initAgent() {
 	}
 
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
-		*addrServer = envReportInterval
+		value, ok := strconv.Atoi(envReportInterval)
+		if ok == nil {
+			*reportTimeout = value
+		}
 	}
 
 	if envPoolInterval := os.Getenv("POLL_INTERVAL"); envPoolInterval != "" {
-		*addrServer = envPoolInterval
+		value, ok := strconv.Atoi(envPoolInterval)
+		if ok == nil {
+			*pollTimeout = value
+		}
 	}
 
 }
