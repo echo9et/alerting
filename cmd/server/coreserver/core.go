@@ -51,10 +51,6 @@ func metricsHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if r.Header.Get("Content-Type") != "text/plain" {
-	// 	w.WriteHeader(http.StatusUnsupportedMediaType)
-	// 	return
-	// }
 	metrics := handlers.GetMetrics()
 	for k, v := range metrics {
 		w.Write([]byte(fmt.Sprintln(k, v)))
