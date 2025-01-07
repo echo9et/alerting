@@ -42,9 +42,9 @@ func sendMetric(name string, value interface{}) {
 	var url string
 	switch v := value.(type) {
 	case float64:
-		url = fmt.Sprintf("http://localhost:8080/update/gauge/%s/%v", name, v)
+		url = fmt.Sprintf("http://%s/update/gauge/%s/%v", *addrServer, name, v)
 	case int64:
-		url = fmt.Sprintf("http://localhost:8080/update/counter/%s/%v", name, v)
+		url = fmt.Sprintf("http://%s/update/counter/%s/%v", *addrServer, name, v)
 	}
 
 	r := bytes.NewReader([]byte(``))
@@ -74,7 +74,6 @@ func updateMetrics(m *metrics, reportInterval int, pullInterval int) {
 }
 func main() {
 	metrics := metrics{}
-
 	metrics.supportMetrics = make(map[string]interface{})
 	metrics.supportMetrics["Alloc"] = &metrics.memory.Alloc
 	metrics.supportMetrics["BuckHashSys"] = &metrics.memory.BuckHashSys
@@ -104,5 +103,6 @@ func main() {
 	metrics.supportMetrics["Sys"] = &metrics.memory.Sys
 	metrics.supportMetrics["TotalAlloc"] = &metrics.memory.TotalAlloc
 
-	updateMetrics(&metrics, reportInterval, pullInterval)
+	parseFlags()
+	updateMetrics(&metrics, *reportTimeout, *pollTimeout)
 }
