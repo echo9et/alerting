@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"os"
 	"runtime"
 	"time"
 )
@@ -73,6 +74,29 @@ func updateMetrics(m *metrics, reportInterval int, pullInterval int) {
 	}
 }
 func main() {
+	initAgent()
+	metrics := NewMetrics()
+	updateMetrics(&metrics, *reportTimeout, *pollTimeout)
+}
+
+func initAgent() {
+	parseFlags()
+
+	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
+		*addrServer = envRunAddr
+	}
+
+	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
+		*addrServer = envReportInterval
+	}
+
+	if envPoolInterval := os.Getenv("POLL_INTERVAL"); envPoolInterval != "" {
+		*addrServer = envPoolInterval
+	}
+
+}
+
+func NewMetrics() metrics {
 	metrics := metrics{}
 	metrics.supportMetrics = make(map[string]interface{})
 	metrics.supportMetrics["Alloc"] = &metrics.memory.Alloc
@@ -103,6 +127,5 @@ func main() {
 	metrics.supportMetrics["Sys"] = &metrics.memory.Sys
 	metrics.supportMetrics["TotalAlloc"] = &metrics.memory.TotalAlloc
 
-	parseFlags()
-	updateMetrics(&metrics, *reportTimeout, *pollTimeout)
+	return metrics
 }
