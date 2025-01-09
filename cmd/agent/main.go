@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/echo9et/alerting/cmd/agent/client"
 )
@@ -20,7 +22,10 @@ func main() {
 	initAgent()
 	parseFlags()
 	a := client.NewAgent(*addrServer)
-	a.UpdateMetrics(*reportTimeout, *pollTimeout)
+	reportTime := time.Duration(*reportTimeout) * time.Second
+	poolTime := time.Duration(*pollTimeout) * time.Second
+	fmt.Println(reportTime, poolTime)
+	a.UpdateMetrics(reportTime, poolTime)
 }
 
 func initAgent() {

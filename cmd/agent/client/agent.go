@@ -39,18 +39,18 @@ func (a Agent) SendMetric(name string, value interface{}) {
 	}
 	defer resp.Body.Close()
 }
-func (a *Agent) UpdateMetrics(reportInterval int, pullInterval int) {
+func (a *Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
 	runtime.GC()
-	counter := 0
+	counter := time.Duration(0)
 	for {
 		runtime.ReadMemStats(&a.metrics.Memory)
 		a.metrics.PollCount += 1
 		a.metrics.RandomValue = rand.Float64()
-		time.Sleep(time.Second * time.Duration(reportInterval))
+		time.Sleep(reportInterval)
 
 		counter += reportInterval
-		if counter >= pullInterval {
-			counter = 0
+		if counter >= pollInterval {
+			counter = time.Duration(0)
 			a.pullMetrics()
 		}
 	}
