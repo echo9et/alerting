@@ -23,7 +23,7 @@ func (m *MemStorage) GetCounter(name string) (string, bool) {
 }
 
 func (m *MemStorage) SetCounter(name string, iValue int64) {
-	m.Counters[name] = iValue
+	m.Counters[name] += iValue
 }
 
 func (m *MemStorage) GetGauge(name string) (string, bool) {

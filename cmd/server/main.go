@@ -10,7 +10,7 @@ import (
 
 var addrServer *string = flag.String("a", "localhost:8080", "server and port to run server")
 
-func PaeseFlags() {
+func ParseFlags() {
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		*addrServer = envRunAddr
 	}
@@ -19,7 +19,7 @@ func PaeseFlags() {
 }
 
 func main() {
-	PaeseFlags()
+	ParseFlags()
 	storage := storage.NewMemStorage()
 	if err := coreserver.Run(*addrServer, storage); err != nil {
 		panic(err)
