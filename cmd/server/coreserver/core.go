@@ -8,33 +8,39 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func GetRouter() *chi.Mux {
+func GetRouter(storage handlers.Storage) *chi.Mux {
 	router := chi.NewRouter()
-	router.Get("/", metricsHandle)
-	router.Post("/update/{type}/{name}/{value}", setMetricHandle)
-	router.Get("/value/{type}/{name}", metricHandle)
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		metricsHandle(w, r, storage)
+	})
+	router.Post("/update/{type}/{name}/{value}", func(w http.ResponseWriter, r *http.Request) {
+		setMetricHandle(w, r, storage)
+	})
+	router.Get("/value/{type}/{name}", func(w http.ResponseWriter, r *http.Request) {
+		metricHandle(w, r, storage)
+	})
 	return router
 }
 
-func Run(addr string) error {
-	return http.ListenAndServe(addr, GetRouter())
+func Run(addr string, storage handlers.Storage) error {
+	return http.ListenAndServe(addr, GetRouter(storage))
 }
 
-func metricHandle(w http.ResponseWriter, r *http.Request) {
+func metricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	typ := chi.URLParam(r, "type")
+	t := chi.URLParam(r, "type")
 	name := chi.URLParam(r, "name")
 	var value string
 	status := false
 
-	switch typ {
+	switch t {
 	case handlers.Gauge:
-		value, status = handlers.GetGaugeValue(name)
+		value, status = s.GetGauge(name)
 	case handlers.Counter:
-		value, status = handlers.GetCounterValue(name)
+		value, status = s.GetCounter(name)
 	}
 
 	if status {
@@ -45,31 +51,26 @@ func metricHandle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func metricsHandle(w http.ResponseWriter, r *http.Request) {
+func metricsHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	metrics := handlers.GetMetrics()
+	metrics := s.AllMetrics()
 	for k, v := range metrics {
 		w.Write([]byte(fmt.Sprintln(k, v)))
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
-func setMetricHandle(w http.ResponseWriter, r *http.Request) {
+func setMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	// if r.Header.Get("Content-Type") != "text/plain" {
-	// 	w.WriteHeader(http.StatusUnsupportedMediaType)
-	// 	return
-	// }
-
-	if err := handlers.WriteMetric(w, r); err != nil {
+	if err := handlers.WriteMetric(w, r, s); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

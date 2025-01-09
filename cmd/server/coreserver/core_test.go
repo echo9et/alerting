@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/echo9et/alerting/cmd/server/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +20,7 @@ type want struct {
 }
 
 func TestStatusHandler(t *testing.T) {
-
+	s := storage.NewMemStorage()
 	tests := []struct {
 		name string
 		want want
@@ -77,7 +78,7 @@ func TestStatusHandler(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		ts := httptest.NewServer(GetRouter())
+		ts := httptest.NewServer(GetRouter(s))
 		defer ts.Close()
 		t.Run(test.name, func(t *testing.T) {
 			resp, _ := testRequest(t, ts, test.want)

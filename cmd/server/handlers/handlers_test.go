@@ -3,9 +3,12 @@ package handlers
 import (
 	"strconv"
 	"testing"
+
+	"github.com/echo9et/alerting/cmd/server/storage"
 )
 
 func TestHandlerCounters(t *testing.T) {
+	s := storage.NewMemStorage()
 	tests := []struct {
 		name  string
 		value string
@@ -14,7 +17,7 @@ func TestHandlerCounters(t *testing.T) {
 		{
 			name:  "test float",
 			value: "3.14",
-			want:  strconv.ErrSyntax, // errors.New("float"),
+			want:  strconv.ErrSyntax,
 		},
 		{
 			name:  "test ok",
@@ -29,7 +32,7 @@ func TestHandlerCounters(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := handlerCounters(tt.name, tt.value)
+			got := handlerCounters(s, tt.name, tt.value)
 			if (got != nil || tt.want != nil) && got == tt.want {
 				t.Errorf("handlerGauge(%s, %s) = %s, want: %s", tt.name, tt.value, got, tt.want)
 			}
@@ -38,6 +41,7 @@ func TestHandlerCounters(t *testing.T) {
 }
 
 func TestHandlerGauge(t *testing.T) {
+	s := storage.NewMemStorage()
 	tests := []struct {
 		name  string
 		value string
@@ -61,7 +65,7 @@ func TestHandlerGauge(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := handlerGauge(tt.name, tt.value)
+			got := handlerGauge(s, tt.name, tt.value)
 			if (got != nil || tt.want != nil) && got == tt.want {
 				t.Errorf("handlerGauge(%s, %s) = %s, want: %s", tt.name, tt.value, got, tt.want)
 			}
