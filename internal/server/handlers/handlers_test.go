@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/echo9et/alerting/cmd/server/storage"
+	"github.com/echo9et/alerting/internal/server/storage"
 )
 
 func TestHandlerCounters(t *testing.T) {
