@@ -1,3 +1,14 @@
 package main
 
-func main() {}
+import (
+	"github.com/echo9et/alerting/internal/server/coreserver"
+	"github.com/echo9et/alerting/internal/server/storage"
+)
+
+func main() {
+	ParseFlags()
+	storage := storage.NewMemStorage()
+	if err := coreserver.Run(*addrServer, storage); err != nil {
+		panic(err)
+	}
+}
