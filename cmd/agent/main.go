@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/echo9et/alerting/cmd/agent/client"
+	"github.com/echo9et/alerting/internal/agent/client"
 )
 
 func main() {

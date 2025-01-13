@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/echo9et/alerting/cmd/server/coreserver"
-	"github.com/echo9et/alerting/cmd/server/storage"
+	"github.com/echo9et/alerting/internal/server/coreserver"
+	"github.com/echo9et/alerting/internal/server/storage"
 )
 
 func main() {

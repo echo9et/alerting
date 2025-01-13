@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/echo9et/alerting/cmd/agent/metrics"
+	"github.com/echo9et/alerting/internal/agent/metrics"
 )
 
 type Agent struct {

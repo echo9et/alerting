@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/echo9et/alerting/cmd/server/handlers"
+	"github.com/echo9et/alerting/internal/server/handlers"
 	"github.com/go-chi/chi/v5"
 )
 
