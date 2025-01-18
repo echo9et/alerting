@@ -4,21 +4,22 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/handlers"
 	"github.com/go-chi/chi/v5"
 )
 
 func GetRouter(storage handlers.Storage) *chi.Mux {
 	router := chi.NewRouter()
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	router.Get("/", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		metricsHandle(w, r, storage)
-	})
-	router.Post("/update/{type}/{name}/{value}", func(w http.ResponseWriter, r *http.Request) {
+	}))
+	router.Post("/update/{type}/{name}/{value}", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		setMetricHandle(w, r, storage)
-	})
-	router.Get("/value/{type}/{name}", func(w http.ResponseWriter, r *http.Request) {
+	}))
+	router.Get("/value/{type}/{name}", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
-	})
+	}))
 	return router
 }
 
