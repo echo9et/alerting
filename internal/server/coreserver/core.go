@@ -14,8 +14,14 @@ func GetRouter(storage handlers.Storage) *chi.Mux {
 	router.Get("/", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		metricsHandle(w, r, storage)
 	}))
+	router.Post("/update", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+		WriteJsonMetricHandle(w, r, storage)
+	}))
 	router.Post("/update/{type}/{name}/{value}", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		setMetricHandle(w, r, storage)
+	}))
+	router.Post("/value", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+		ReadJsonMetricHandle(w, r, storage)
 	}))
 	router.Get("/value/{type}/{name}", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
@@ -72,6 +78,38 @@ func setMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage)
 	}
 
 	if err := handlers.WriteMetric(w, r, s); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func WriteJsonMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if r.Header.Get("Content-type") != "application/json" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := handlers.WriteJsonMetric(w, r, s); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func ReadJsonMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if r.Header.Get("Content-type") != "application/json" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := handlers.ReadJsonMetric(w, r, s); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

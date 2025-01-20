@@ -1,11 +1,21 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
+
+type MetricsJson struct {
+	ID    string   `json:"id"`              // имя метрики
+	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+}
 
 type Storage interface {
 	GetCounter(string) (string, bool)
@@ -57,5 +67,92 @@ func WriteMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	return nil
+}
+
+func WriteJsonMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
+	var metricsJson MetricsJson
+	var buf bytes.Buffer
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(buf.Bytes(), &metricsJson); err != nil {
+		return err
+	}
+
+	if err = saveJsonMetrics(s, metricsJson); err != nil {
+		return err
+	}
+
+	out, err := json.Marshal(metricsJson)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(out)
+	return nil
+}
+
+func ReadJsonMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
+	var metricsJson MetricsJson
+	var buf bytes.Buffer
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(buf.Bytes(), &metricsJson); err != nil {
+		return err
+	}
+	if err = getJsonMetrics(s, &metricsJson); err != nil {
+		return err
+	}
+
+	out, err := json.Marshal(metricsJson)
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(out)
+
+	return nil
+}
+
+func getJsonMetrics(s Storage, mj *MetricsJson) error {
+	switch mj.MType {
+	case Counter:
+		value, status := s.GetCounter(mj.ID)
+		if !status {
+			return errors.New("counter not found")
+		}
+		iValue, _ := strconv.ParseInt(value, 10, 64)
+		mj.Delta = &iValue
+	case Gauge:
+		value, status := s.GetGauge(mj.ID)
+		if !status {
+			return errors.New("gauge not found")
+		}
+		dValue, _ := strconv.ParseFloat(value, 64)
+		mj.Value = &dValue
+	}
+
+	return nil
+}
+
+func saveJsonMetrics(s Storage, mj MetricsJson) error {
+	switch mj.MType {
+	case Counter:
+		s.SetCounter(mj.ID, *mj.Delta)
+	case Gauge:
+		s.SetGauge(mj.ID, *mj.Value)
+	default:
+		return errors.New("Unknow type")
+	}
+
 	return nil
 }
