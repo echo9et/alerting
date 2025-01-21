@@ -79,22 +79,22 @@ func WriteMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
 }
 
 func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
-	var metricsJson MetricsJSON
+	var mj MetricsJSON
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		return err
 	}
 
-	if err = json.Unmarshal(buf.Bytes(), &metricsJson); err != nil {
+	if err = json.Unmarshal(buf.Bytes(), &mj); err != nil {
 		return err
 	}
 
-	if err = saveJsonMetrics(s, metricsJson); err != nil {
+	if err = saveMetricsJSON(s, mj); err != nil {
 		return err
 	}
 
-	out, err := json.Marshal(metricsJson)
+	out, err := json.Marshal(mj)
 	if err != nil {
 		return err
 	}
@@ -106,21 +106,21 @@ func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
 }
 
 func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
-	var metricsJson MetricsJSON
+	var mj MetricsJSON
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		return err
 	}
 
-	if err = json.Unmarshal(buf.Bytes(), &metricsJson); err != nil {
+	if err = json.Unmarshal(buf.Bytes(), &mj); err != nil {
 		return err
 	}
-	if err = getJsonMetrics(s, &metricsJson); err != nil {
+	if err = getMetricsJSON(s, &mj); err != nil {
 		return err
 	}
 
-	out, err := json.Marshal(metricsJson)
+	out, err := json.Marshal(mj)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
 	return nil
 }
 
-func getJsonMetrics(s Storage, mj *MetricsJSON) error {
+func getMetricsJSON(s Storage, mj *MetricsJSON) error {
 	switch mj.MType {
 	case Counter:
 		value, status := s.GetCounter(mj.ID)
@@ -152,7 +152,7 @@ func getJsonMetrics(s Storage, mj *MetricsJSON) error {
 	return nil
 }
 
-func saveJsonMetrics(s Storage, mj MetricsJSON) error {
+func saveMetricsJSON(s Storage, mj MetricsJSON) error {
 	switch mj.MType {
 	case Counter:
 		s.SetCounter(mj.ID, *mj.Delta)
