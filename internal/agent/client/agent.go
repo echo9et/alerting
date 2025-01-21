@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/echo9et/alerting/internal/agent/metrics"
+	"github.com/echo9et/alerting/internal/entities"
 )
 
 type Agent struct {
@@ -24,15 +26,23 @@ func NewAgent(addressServer string) *Agent {
 
 func (a Agent) SendMetric(name string, value interface{}) {
 	var url string
+	var mj entities.MetricsJSON
+	mj.ID = name
 	switch v := value.(type) {
 	case float64:
-		url = fmt.Sprintf("http://%s/update/gauge/%s/%v", a.outServer, name, v)
+		mj.MType = entities.Gauge
+		mj.Value = &v
 	case int64:
-		url = fmt.Sprintf("http://%s/update/counter/%s/%v", a.outServer, name, v)
+		mj.MType = entities.Counter
+		mj.Delta = &v
 	}
-
-	r := bytes.NewReader([]byte(``))
-	resp, err := http.Post(url, "text/plain", r)
+	data, err := json.Marshal(mj)
+	if err != nil {
+		fmt.Println("ERROR:", err)
+		return
+	}
+	r := bytes.NewReader(data)
+	resp, err := http.Post(url, "application/json", r)
 	if err != nil {
 		fmt.Println("ERROR:", err)
 		return
@@ -51,12 +61,12 @@ func (a *Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Du
 		counter += reportInterval
 		if counter >= pollInterval {
 			counter = time.Duration(0)
-			a.pullMetrics()
+			a.pollMetrics()
 		}
 	}
 }
 
-func (a *Agent) pullMetrics() {
+func (a *Agent) pollMetrics() {
 	for key, value := range a.metrics.SupportMetrics {
 		var sendValue float64
 		switch v := value.(type) {
