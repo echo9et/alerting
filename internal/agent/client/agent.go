@@ -25,7 +25,7 @@ func NewAgent(addressServer string) *Agent {
 }
 
 func (a Agent) SendMetric(name string, value interface{}) {
-	var url string
+
 	var mj entities.MetricsJSON
 	mj.ID = name
 	switch v := value.(type) {
@@ -42,6 +42,7 @@ func (a Agent) SendMetric(name string, value interface{}) {
 		return
 	}
 	r := bytes.NewReader(data)
+	url := fmt.Sprintf("http://%s/update", a.outServer)
 	resp, err := http.Post(url, "application/json", r)
 	if err != nil {
 		fmt.Println("ERROR:", err)
