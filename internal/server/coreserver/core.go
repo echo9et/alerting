@@ -15,13 +15,13 @@ func GetRouter(storage handlers.Storage) *chi.Mux {
 		metricsHandle(w, r, storage)
 	}))
 	router.Post("/update", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
-		WriteJsonMetricHandle(w, r, storage)
+		WriteMetricJSONHandle(w, r, storage)
 	}))
 	router.Post("/update/{type}/{name}/{value}", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		setMetricHandle(w, r, storage)
 	}))
 	router.Post("/value", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
-		ReadJsonMetricHandle(w, r, storage)
+		ReadMetricJSONHandle(w, r, storage)
 	}))
 	router.Get("/value/{type}/{name}", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
@@ -82,7 +82,7 @@ func setMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage)
 	}
 }
 
-func WriteJsonMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+func WriteMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -98,7 +98,7 @@ func WriteJsonMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.St
 	}
 }
 
-func ReadJsonMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
