@@ -93,7 +93,7 @@ func WriteJsonMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.St
 		return
 	}
 
-	if err := handlers.WriteJsonMetric(w, r, s); err != nil {
+	if err := handlers.WriteMetricJSON(w, r, s); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -109,7 +109,7 @@ func ReadJsonMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Sto
 		return
 	}
 
-	if err := handlers.ReadJsonMetric(w, r, s); err != nil {
+	if err := handlers.ReadMetricJSON(w, r, s); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type MetricsJson struct {
+type MetricsJSON struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
@@ -29,6 +29,14 @@ const (
 	Gauge   = "gauge"
 	Counter = "counter"
 )
+
+type UnknowType struct {
+	Message string
+}
+
+func (e *UnknowType) Error() string {
+	return "Unknow Type"
+}
 
 var supportMetrics = map[string]func(Storage, string, string) error{
 	Gauge:   handlerGauge,
@@ -70,8 +78,8 @@ func WriteMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
 	return nil
 }
 
-func WriteJsonMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
-	var metricsJson MetricsJson
+func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
+	var metricsJson MetricsJSON
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
@@ -97,8 +105,8 @@ func WriteJsonMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
 	return nil
 }
 
-func ReadJsonMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
-	var metricsJson MetricsJson
+func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
+	var metricsJson MetricsJSON
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
@@ -123,7 +131,7 @@ func ReadJsonMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
 	return nil
 }
 
-func getJsonMetrics(s Storage, mj *MetricsJson) error {
+func getJsonMetrics(s Storage, mj *MetricsJSON) error {
 	switch mj.MType {
 	case Counter:
 		value, status := s.GetCounter(mj.ID)
@@ -144,14 +152,14 @@ func getJsonMetrics(s Storage, mj *MetricsJson) error {
 	return nil
 }
 
-func saveJsonMetrics(s Storage, mj MetricsJson) error {
+func saveJsonMetrics(s Storage, mj MetricsJSON) error {
 	switch mj.MType {
 	case Counter:
 		s.SetCounter(mj.ID, *mj.Delta)
 	case Gauge:
 		s.SetGauge(mj.ID, *mj.Value)
 	default:
-		return errors.New("Unknow type")
+		return &UnknowType{}
 	}
 
 	return nil
