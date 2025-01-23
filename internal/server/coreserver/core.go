@@ -116,6 +116,6 @@ func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Sto
 	}
 
 	if err := handlers.ReadMetricJSON(w, r, s); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusNotFound)
 	}
 }
