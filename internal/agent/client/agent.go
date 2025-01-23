@@ -33,10 +33,8 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 		mj.MType = entities.Gauge
 		mj.Value = &v
 	case int64:
-		print("======")
 		mj.MType = entities.Counter
 		mj.Delta = &v
-		print("-----")
 	}
 	data, err := json.Marshal(mj)
 	if err != nil {
@@ -45,10 +43,14 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 	}
 	r := bytes.NewReader(data)
 	url := fmt.Sprintf("http://%s/update", a.outServer)
-	resp, err := http.Post(url, "application/json", r)
+	// resp, err := http.Post(url, "application/json", r)
+	resp, err := http.Post(url, "text/plain", r)
 	if err != nil {
 		fmt.Println("ERROR:", err)
 		return
+	}
+	if mj.ID == "Alloc" {
+		fmt.Println(mj.ID, mj.MType, *mj.Value)
 	}
 	defer resp.Body.Close()
 }
