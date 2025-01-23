@@ -14,7 +14,7 @@ import (
 )
 
 type Agent struct {
-	metrics   metrics.Metrics
+	metrics   *metrics.Metrics
 	outServer string
 }
 
@@ -24,7 +24,7 @@ func NewAgent(addressServer string) *Agent {
 	}
 }
 
-func (a Agent) SendMetric(name string, value interface{}) {
+func (a *Agent) SendMetric(name string, value interface{}) {
 
 	var mj entities.MetricsJSON
 	mj.ID = name
@@ -50,7 +50,7 @@ func (a Agent) SendMetric(name string, value interface{}) {
 	}
 	defer resp.Body.Close()
 }
-func (a *Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
+func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
 	runtime.GC()
 	counter := time.Duration(0)
 	for {
@@ -69,6 +69,7 @@ func (a *Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Du
 
 func (a *Agent) pollMetrics() {
 	for key, value := range a.metrics.SupportMetrics {
+
 		var sendValue float64
 		switch v := value.(type) {
 		case *uint64:
