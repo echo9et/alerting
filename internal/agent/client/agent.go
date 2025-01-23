@@ -43,8 +43,7 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 	}
 	r := bytes.NewReader(data)
 	url := fmt.Sprintf("http://%s/update", a.outServer)
-	// resp, err := http.Post(url, "application/json", r)
-	resp, err := http.Post(url, "text/plain", r)
+	resp, err := http.Post(url, "application/json", r)
 	if err != nil {
 		fmt.Println("ERROR:", err)
 		return

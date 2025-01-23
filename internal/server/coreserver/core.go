@@ -17,8 +17,14 @@ func GetRouter(storage handlers.Storage) *chi.Mux {
 	router.Post("/update", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricJSONHandle(w, r, storage)
 	}))
+	router.Post("/update/", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+		WriteMetricJSONHandle(w, r, storage)
+	}))
 	router.Post("/update/{type}/{name}/{value}", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		setMetricHandle(w, r, storage)
+	}))
+	router.Post("/value/", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+		ReadMetricJSONHandle(w, r, storage)
 	}))
 	router.Post("/value", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
 		ReadMetricJSONHandle(w, r, storage)
