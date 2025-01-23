@@ -33,8 +33,10 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 		mj.MType = entities.Gauge
 		mj.Value = &v
 	case int64:
+		print("======")
 		mj.MType = entities.Counter
 		mj.Delta = &v
+		print("-----")
 	}
 	data, err := json.Marshal(mj)
 	if err != nil {
