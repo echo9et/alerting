@@ -74,7 +74,7 @@ func (c *compressReader) Close() error {
 func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
-		acceptEnecoding := r.Header.Get("Accept-Enecoding")
+		acceptEnecoding := r.Header.Get("Accept-Encoding")
 		isAcceptGzip := strings.Contains(acceptEnecoding, "gzip")
 		// Если подерживается комресия gzip - отдаем в cжатом виде
 		if isAcceptGzip {
@@ -84,12 +84,12 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 				cw := newCompressWriter(w)
 				ow = cw
 				defer cw.Close()
-				ow.Header().Set("Content-Enecoding", "gzip")
+				ow.Header().Set("Content-Encoding", "gzip")
 			}
 		}
 
 		// Если данные в компресии gzip декодируем, TODO вернуть ошибку, если не подерживает тип сжатия
-		contentEnecoding := r.Header.Get("Content-Enecoding")
+		contentEnecoding := r.Header.Get("Content-Encoding")
 		isEnecodingGzip := strings.Contains(contentEnecoding, "gzip")
 		if isEnecodingGzip {
 			cr, err := newCompressReader(r.Body)
