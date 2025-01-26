@@ -77,6 +77,7 @@ func metricsHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 
 	if r.Header.Get("Accept") == "text/html" {
 		w.Header().Set("Content-Type", "text/html")
+		r.Header().Set("Content-Type", "text/html")
 	}
 
 	metrics := s.AllMetrics()
