@@ -42,7 +42,8 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 		fmt.Println("ERROR:", err)
 		return
 	}
-	err = a.SendDataToServer(data, false)
+	// err = a.SendDataToServer(data, false)
+	err = a.SendDataToServerGzip(data)
 	if err != nil {
 		fmt.Println("ERROR:", err)
 	}
