@@ -79,7 +79,7 @@ func metricsHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 	for k, v := range metrics {
 		w.Write([]byte(fmt.Sprintln(k, v)))
 	}
-	if r.Header.Get("Content-Type") == "text/plain" {
+	if r.Header.Get("Content-Type") == "text/html" {
 		w.Header().Set("Content-Type", "text/html")
 	}
 	w.WriteHeader(http.StatusOK)
