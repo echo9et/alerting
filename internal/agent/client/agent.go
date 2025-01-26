@@ -42,7 +42,7 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 		fmt.Println("ERROR:", err)
 		return
 	}
-	err = a.SendDataToServerNoGzip(data)
+	err = a.SendDataToServer(data, false)
 	if err != nil {
 		fmt.Println("ERROR:", err)
 	}
@@ -82,37 +82,24 @@ func (a *Agent) pollMetrics() {
 	a.SendMetric("RandomValue", a.metrics.RandomValue)
 }
 
-func (a *Agent) SendDataToServer(data []byte) error {
+func (a *Agent) SendDataToServerGzip(data []byte) error {
 	cd, err := CompressGzip(data)
 	if err != nil {
 		return err
 	}
-
-	body := bytes.NewReader(cd)
-
-	url := fmt.Sprintf("http://%s/update", a.outServer)
-	req, err := http.NewRequest("POST", url, body)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Enecoding", "gzip")
-	req.Header.Set("Content-type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	return nil
+	return a.SendDataToServer(cd, true)
 }
 
-func (a *Agent) SendDataToServerNoGzip(data []byte) error {
+func (a *Agent) SendDataToServer(data []byte, isGzip bool) error {
 	body := bytes.NewReader(data)
 
 	url := fmt.Sprintf("http://%s/update", a.outServer)
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return err
+	}
+	if isGzip {
+		req.Header.Set("Content-Enecoding", "gzip")
 	}
 	req.Header.Set("Content-type", "application/json")
 
