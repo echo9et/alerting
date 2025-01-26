@@ -100,7 +100,7 @@ func (a *Agent) SendDataToServer(data []byte, isGzip bool) error {
 		return err
 	}
 	if isGzip {
-		req.Header.Set("Content-Enecoding", "gzip")
+		req.Header.Set("Content-Encoding", "gzip")
 	}
 	req.Header.Set("Content-type", "application/json")
 
