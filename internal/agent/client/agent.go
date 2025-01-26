@@ -107,9 +107,16 @@ func (a *Agent) SendDataToServer(data []byte) error {
 }
 
 func (a *Agent) SendDataToServerNoGzip(data []byte) error {
-	r := bytes.NewReader(data)
+	body := bytes.NewReader(data)
+
 	url := fmt.Sprintf("http://%s/update", a.outServer)
-	resp, err := http.Post(url, "application/json", r)
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
