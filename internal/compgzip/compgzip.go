@@ -2,6 +2,7 @@ package compgzip
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -73,11 +74,13 @@ func (c *compressReader) Close() error {
 
 func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Если подерживается комресия gzip - отдаем в жатом виде
+		fmt.Println("--- GzipMiddleware")
 		ow := w
 		acceptEnecoding := r.Header.Get("Accept-Enecoding")
 		isAcceptGzip := strings.Contains(acceptEnecoding, "gzip")
+		// Если подерживается комресия gzip - отдаем в cжатом виде
 		if isAcceptGzip {
+			fmt.Println("--- out zip Content-Encoding", "gzip")
 			ow.Header().Set("Content-Encoding", "gzip")
 			cw := newCompressWriter(w)
 			ow = cw
@@ -88,6 +91,8 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 		contentEnecoding := r.Header.Get("Content-Enecoding")
 		isEnecodingGzip := strings.Contains(contentEnecoding, "gzip")
 		if isEnecodingGzip {
+
+			fmt.Println("--- in zip Content-Encoding", "gzip")
 			cr, err := newCompressReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
