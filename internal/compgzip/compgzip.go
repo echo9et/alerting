@@ -82,9 +82,9 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 			print(contentTypes)
 			if strings.Contains(contentTypes, "application/json") || strings.Contains(contentTypes, "text/html") {
 				cw := newCompressWriter(w)
-				cw.WriteHeader(200)
 				ow = cw
 				defer cw.Close()
+				ow.Header().Set("Content-Encoding", "gzip")
 			}
 		}
 
