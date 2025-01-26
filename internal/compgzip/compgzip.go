@@ -80,11 +80,12 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 		if isAcceptGzip {
 			contentTypes := r.Header.Get("Content-Type")
 			print(contentTypes)
-			// if strings.Contains(contentTypes, "application/json") || strings.Contains(contentTypes, "text/html") {
-			cw := newCompressWriter(w)
-			ow = cw
-			defer cw.Close()
-			// }
+			if strings.Contains(contentTypes, "application/json") || strings.Contains(contentTypes, "text/html") {
+				cw := newCompressWriter(w)
+				ow = cw
+				defer cw.Close()
+				ow.Header().Set("Content-Enecoding", "gzip")
+			}
 		}
 
 		// Если данные в компресии gzip декодируем, TODO вернуть ошибку, если не подерживает тип сжатия
@@ -98,11 +99,6 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 			}
 			r.Body = cr
 			defer cr.Close()
-		}
-		ow.Header().Set("Accept-Enecoding", "gzip")
-
-		if isAcceptGzip {
-			ow.Header().Set("Content-Encoding", "gzip")
 		}
 		h.ServeHTTP(ow, r)
 	})
