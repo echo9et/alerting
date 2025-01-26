@@ -2,7 +2,6 @@ package compgzip
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -74,7 +73,6 @@ func (c *compressReader) Close() error {
 
 func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("--- GzipMiddleware")
 		ow := w
 		acceptEnecoding := r.Header.Get("Accept-Enecoding")
 		isAcceptGzip := strings.Contains(acceptEnecoding, "gzip")
@@ -83,8 +81,7 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 			contentTypes := r.Header.Get("Content-Type")
 			print(contentTypes)
 			if strings.Contains(contentTypes, "application/json") || strings.Contains(contentTypes, "text/html") {
-				fmt.Println("--- out zip Content-Encoding", "gzip")
-				ow.Header().Set("Content-Encoding", "gzip")
+				// ow.Header().Set("Content-Encoding", "gzip")
 				cw := newCompressWriter(w)
 				ow = cw
 				defer cw.Close()
@@ -95,7 +92,6 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 		contentEnecoding := r.Header.Get("Content-Enecoding")
 		isEnecodingGzip := strings.Contains(contentEnecoding, "gzip")
 		if isEnecodingGzip {
-			fmt.Println("--- in zip Content-Encoding", "gzip")
 			cr, err := newCompressReader(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -105,7 +101,6 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 			defer cr.Close()
 		}
 		ow.Header().Set("Accept-Enecoding", "gzip")
-
 		h.ServeHTTP(ow, r)
 	})
 }

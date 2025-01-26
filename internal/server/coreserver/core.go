@@ -12,7 +12,6 @@ import (
 
 func middleware(h http.HandlerFunc) http.HandlerFunc {
 	return logger.RequestLogger(compgzip.GzipMiddleware(h))
-	// return logger.RequestLogger(h)
 }
 
 func GetRouter(storage handlers.Storage) *chi.Mux {
