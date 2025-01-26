@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/echo9et/alerting/internal/compgzip"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/handlers"
 	"github.com/go-chi/chi/v5"
 )
 
 func middleware(h http.HandlerFunc) http.HandlerFunc {
-	// return logger.RequestLogger(compgzip.GzipMiddleware(h))
-	return logger.RequestLogger(h)
+	return logger.RequestLogger(compgzip.GzipMiddleware(h))
+	// return logger.RequestLogger(h)
 }
 
 func GetRouter(storage handlers.Storage) *chi.Mux {
