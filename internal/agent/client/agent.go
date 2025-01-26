@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -41,17 +42,10 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 		fmt.Println("ERROR:", err)
 		return
 	}
-	r := bytes.NewReader(data)
-	url := fmt.Sprintf("http://%s/update", a.outServer)
-	resp, err := http.Post(url, "application/json", r)
+	err = a.SendDataToServer(data)
 	if err != nil {
 		fmt.Println("ERROR:", err)
-		return
 	}
-	if mj.ID == "Alloc" {
-		fmt.Println(mj.ID, mj.MType, *mj.Value)
-	}
-	defer resp.Body.Close()
 }
 func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
 	runtime.GC()
@@ -86,4 +80,42 @@ func (a *Agent) pollMetrics() {
 	}
 	a.SendMetric("PollCount", a.metrics.PollCount)
 	a.SendMetric("RandomValue", a.metrics.RandomValue)
+}
+
+func (a *Agent) SendDataToServer(data []byte) error {
+	cd, err := CompressGzip(data)
+	if err != nil {
+		return err
+	}
+
+	body := bytes.NewReader(cd)
+
+	url := fmt.Sprintf("http://%s/update", a.outServer)
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Content-Enecoding", "gzip")
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
+func CompressGzip(data []byte) ([]byte, error) {
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	_, err := gz.Write(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed write data to compress temporary buffer: %v", err)
+	}
+	err = gz.Close()
+	if err != nil {
+		return nil, fmt.Errorf("failed compress data: %v", err)
+	}
+	return b.Bytes(), nil
 }
