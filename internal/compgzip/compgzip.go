@@ -99,7 +99,7 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 			r.Body = cr
 			defer cr.Close()
 		}
-		// ow.Header().Set("Accept-Enecoding", "gzip")
+		ow.Header().Set("Accept-Enecoding", "gzip")
 
 		if isAcceptGzip {
 			ow.Header().Set("Content-Encoding", "gzip")
