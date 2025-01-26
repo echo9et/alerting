@@ -9,27 +9,31 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+func middleware(f func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+	return logger.RequestLogger(f)
+}
+
 func GetRouter(storage handlers.Storage) *chi.Mux {
 	router := chi.NewRouter()
-	router.Get("/", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+	router.Get("/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricsHandle(w, r, storage)
 	}))
-	router.Post("/update", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+	router.Post("/update", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricJSONHandle(w, r, storage)
 	}))
-	router.Post("/update/", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+	router.Post("/update/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricJSONHandle(w, r, storage)
 	}))
-	router.Post("/update/{type}/{name}/{value}", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+	router.Post("/update/{type}/{name}/{value}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		setMetricHandle(w, r, storage)
 	}))
-	router.Post("/value/", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+	router.Post("/value/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		ReadMetricJSONHandle(w, r, storage)
 	}))
-	router.Post("/value", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+	router.Post("/value", middleware(func(w http.ResponseWriter, r *http.Request) {
 		ReadMetricJSONHandle(w, r, storage)
 	}))
-	router.Get("/value/{type}/{name}", logger.RequestLogger(func(w http.ResponseWriter, r *http.Request) {
+	router.Get("/value/{type}/{name}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
 	}))
 	return router
