@@ -94,9 +94,6 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 			}
 			r.Body = cr
 			defer cr.Close()
-		} else if contentEnecoding != "" {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
 		}
 
 		h.ServeHTTP(ow, r)
