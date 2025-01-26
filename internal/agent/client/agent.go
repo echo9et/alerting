@@ -42,7 +42,7 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 		fmt.Println("ERROR:", err)
 		return
 	}
-	err = a.SendDataToServer(data)
+	err = a.SendDataToServerNoGzip(data)
 	if err != nil {
 		fmt.Println("ERROR:", err)
 	}
@@ -93,14 +93,25 @@ func (a *Agent) SendDataToServer(data []byte) error {
 	url := fmt.Sprintf("http://%s/update", a.outServer)
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	req.Header.Set("Content-Enecoding", "gzip")
 	req.Header.Set("Content-type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		panic(err)
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
+func (a *Agent) SendDataToServerNoGzip(data []byte) error {
+	r := bytes.NewReader(data)
+	url := fmt.Sprintf("http://%s/update", a.outServer)
+	resp, err := http.Post(url, "application/json", r)
+	if err != nil {
+		return err
 	}
 	defer resp.Body.Close()
 	return nil
