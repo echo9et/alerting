@@ -80,18 +80,20 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 		isAcceptGzip := strings.Contains(acceptEnecoding, "gzip")
 		// Если подерживается комресия gzip - отдаем в cжатом виде
 		if isAcceptGzip {
-			fmt.Println("--- out zip Content-Encoding", "gzip")
-			ow.Header().Set("Content-Encoding", "gzip")
-			cw := newCompressWriter(w)
-			ow = cw
-			defer cw.Close()
+			contentTypes := r.Header.Get("Content-Type")
+			if strings.Contains(contentTypes, "application/json") && strings.Contains(contentTypes, "text/html") {
+				fmt.Println("--- out zip Content-Encoding", "gzip")
+				ow.Header().Set("Content-Encoding", "gzip")
+				cw := newCompressWriter(w)
+				ow = cw
+				defer cw.Close()
+			}
 		}
 
 		// Если данные в компресии gzip декодируем, TODO вернуть ошибку, если не подерживает тип сжатия
 		contentEnecoding := r.Header.Get("Content-Enecoding")
 		isEnecodingGzip := strings.Contains(contentEnecoding, "gzip")
 		if isEnecodingGzip {
-
 			fmt.Println("--- in zip Content-Encoding", "gzip")
 			cr, err := newCompressReader(r.Body)
 			if err != nil {
