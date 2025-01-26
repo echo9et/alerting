@@ -9,8 +9,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func middleware(f func(w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
-	return logger.RequestLogger(f)
+func middleware(h http.HandlerFunc) http.HandlerFunc {
+	return logger.RequestLogger(h)
 }
 
 func GetRouter(storage handlers.Storage) *chi.Mux {
