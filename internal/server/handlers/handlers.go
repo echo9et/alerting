@@ -7,15 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/echo9et/alerting/internal/entities"
 	"github.com/go-chi/chi/v5"
 )
-
-type MetricsJSON struct {
-	ID    string   `json:"id"`              // имя метрики
-	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
-}
 
 type Storage interface {
 	GetCounter(string) (string, bool)
@@ -79,7 +73,7 @@ func WriteMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
 }
 
 func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
-	var mj MetricsJSON
+	var mj entities.MetricsJSON
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
@@ -106,7 +100,7 @@ func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
 }
 
 func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
-	var mj MetricsJSON
+	var mj entities.MetricsJSON
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
@@ -131,7 +125,7 @@ func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
 	return nil
 }
 
-func getMetricsJSON(s Storage, mj *MetricsJSON) error {
+func getMetricsJSON(s Storage, mj *entities.MetricsJSON) error {
 	switch mj.MType {
 	case Counter:
 		value, status := s.GetCounter(mj.ID)
@@ -152,7 +146,7 @@ func getMetricsJSON(s Storage, mj *MetricsJSON) error {
 	return nil
 }
 
-func saveMetricsJSON(s Storage, mj MetricsJSON) error {
+func saveMetricsJSON(s Storage, mj entities.MetricsJSON) error {
 	switch mj.MType {
 	case Counter:
 		s.SetCounter(mj.ID, *mj.Delta)

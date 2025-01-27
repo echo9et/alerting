@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/echo9et/alerting/internal/compgzip"
+	"github.com/echo9et/alerting/internal/entities"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/handlers"
 	"github.com/go-chi/chi/v5"
@@ -40,8 +41,8 @@ func GetRouter(storage handlers.Storage) *chi.Mux {
 	return router
 }
 
-func Run(addr string, storage handlers.Storage) error {
-	return http.ListenAndServe(addr, GetRouter(storage))
+func Run(settings entities.Settings, storage handlers.Storage) error {
+	return http.ListenAndServe(settings.Address, GetRouter(storage))
 }
 
 func metricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
