@@ -52,8 +52,7 @@ func (s *Store) GetGauge(name string) (string, bool) {
 
 func (s *Store) SetGauge(name string, fValue float64) {
 	if metric, ok := s.Metrics[name]; ok {
-		newValue := *(metric.Value) + fValue
-		metric.Value = &newValue
+		metric.Value = &fValue
 		s.Metrics[name] = metric
 	} else {
 		s.Metrics[name] = entities.MetricsJSON{

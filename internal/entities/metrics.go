@@ -1,9 +1,5 @@
 package entities
 
-type DataJson struct {
-	Data []MetricsJSON `json:"data"`
-}
-
 type MetricsJSON struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
