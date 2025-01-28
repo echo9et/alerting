@@ -6,17 +6,17 @@ import (
 	"github.com/echo9et/alerting/internal/entities"
 )
 
-type Store struct {
+type MemStore struct {
 	Metrics map[string]entities.MetricsJSON
 }
 
-func NewStore() *Store {
-	return &Store{
+func NewMemStore() *MemStore {
+	return &MemStore{
 		Metrics: make(map[string]entities.MetricsJSON),
 	}
 }
 
-func (s *Store) GetCounter(name string) (string, bool) {
+func (s *MemStore) GetCounter(name string) (string, bool) {
 	metric, ok := s.Metrics[name]
 	if ok {
 		if metric.MType == entities.Counter {
@@ -26,7 +26,7 @@ func (s *Store) GetCounter(name string) (string, bool) {
 	return "", false
 }
 
-func (s *Store) SetCounter(name string, iValue int64) {
+func (s *MemStore) SetCounter(name string, iValue int64) {
 	if metric, ok := s.Metrics[name]; ok {
 		newValue := *(metric.Delta) + iValue
 		metric.Delta = &newValue
@@ -40,7 +40,7 @@ func (s *Store) SetCounter(name string, iValue int64) {
 	}
 }
 
-func (s *Store) GetGauge(name string) (string, bool) {
+func (s *MemStore) GetGauge(name string) (string, bool) {
 	metric, ok := s.Metrics[name]
 	if ok {
 		if metric.MType == entities.Gauge {
@@ -50,7 +50,7 @@ func (s *Store) GetGauge(name string) (string, bool) {
 	return "", false
 }
 
-func (s *Store) SetGauge(name string, fValue float64) {
+func (s *MemStore) SetGauge(name string, fValue float64) {
 	if metric, ok := s.Metrics[name]; ok {
 		metric.Value = &fValue
 		s.Metrics[name] = metric
@@ -63,7 +63,7 @@ func (s *Store) SetGauge(name string, fValue float64) {
 	}
 }
 
-func (s *Store) AllMetrics() map[string]string {
+func (s *MemStore) AllMetrics() map[string]string {
 	out := make(map[string]string)
 	for k, v := range s.Metrics {
 		out[k] = fmt.Sprint(v)
@@ -71,7 +71,7 @@ func (s *Store) AllMetrics() map[string]string {
 	return out
 }
 
-func (s *Store) AllMetricsJSON() []entities.MetricsJSON {
+func (s *MemStore) AllMetricsJSON() []entities.MetricsJSON {
 
 	metricsJSON := make([]entities.MetricsJSON, 0)
 

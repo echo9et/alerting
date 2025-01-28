@@ -11,16 +11,25 @@ import (
 	"github.com/echo9et/alerting/internal/entities"
 )
 
+type Store interface {
+	GetCounter(string) (string, bool)
+	SetCounter(string, int64)
+	GetGauge(string) (string, bool)
+	SetGauge(string, float64)
+	AllMetrics() map[string]string
+	AllMetricsJSON() []entities.MetricsJSON
+}
+
 type Saver struct {
-	Store         *Store
+	Store         Store
 	filename      string
 	isRestore     bool
 	storeInterval time.Duration
 }
 
-func NewSaver(filename string, isRestore bool, duration time.Duration) (*Saver, error) {
+func NewSaver(storage Store, filename string, isRestore bool, duration time.Duration) (*Saver, error) {
 	saver := &Saver{
-		Store:         NewStore(),
+		Store:         storage,
 		filename:      filename,
 		isRestore:     isRestore,
 		storeInterval: duration,

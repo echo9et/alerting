@@ -22,7 +22,7 @@ func main() {
 	}
 
 	// storage := storage.NewMemStorage()
-	storage, err := storage.NewSaver(settingsServer.FilenameStorage, settingsServer.IsRestore, settingsServer.StoreInterval)
+	storage, err := storage.NewSaver(storage.NewMemStore(), settingsServer.FilenameStorage, settingsServer.IsRestore, settingsServer.StoreInterval)
 	if err != nil {
 		panic(err)
 	}
