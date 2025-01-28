@@ -1,50 +1,83 @@
 package storage
 
-import "fmt"
+import (
+	"fmt"
 
-type MemStorage struct {
-	Counters map[string]int64
-	Gauges   map[string]float64
+	"github.com/echo9et/alerting/internal/entities"
+)
+
+type Store struct {
+	Metrics map[string]entities.MetricsJSON
 }
 
-func NewMemStorage() *MemStorage {
-	return &MemStorage{
-		Counters: make(map[string]int64),
-		Gauges:   make(map[string]float64),
+func NewStore() *Store {
+	return &Store{
+		Metrics: make(map[string]entities.MetricsJSON),
 	}
 }
 
-func (m *MemStorage) GetCounter(name string) (string, bool) {
-	value, ok := m.Counters[name]
+func (s *Store) GetCounter(name string) (string, bool) {
+	metric, ok := s.Metrics[name]
 	if ok {
-		return fmt.Sprint(value), true
+		if metric.MType == entities.Counter {
+			return fmt.Sprint(*metric.Delta), true
+		}
 	}
 	return "", false
 }
 
-func (m *MemStorage) SetCounter(name string, iValue int64) {
-	m.Counters[name] += iValue
+func (s *Store) SetCounter(name string, iValue int64) {
+	if metric, ok := s.Metrics[name]; ok {
+		newValue := *(metric.Delta) + iValue
+		metric.Delta = &newValue
+		s.Metrics[name] = metric
+	} else {
+		s.Metrics[name] = entities.MetricsJSON{
+			ID:    name,
+			MType: entities.Counter,
+			Delta: &iValue,
+		}
+	}
 }
 
-func (m *MemStorage) GetGauge(name string) (string, bool) {
-	value, ok := m.Gauges[name]
+func (s *Store) GetGauge(name string) (string, bool) {
+	metric, ok := s.Metrics[name]
 	if ok {
-		return fmt.Sprint(value), true
+		if metric.MType == entities.Gauge {
+			return fmt.Sprint(*metric.Value), true
+		}
 	}
 	return "", false
 }
 
-func (m *MemStorage) SetGauge(name string, fValue float64) {
-	m.Gauges[name] = fValue
+func (s *Store) SetGauge(name string, fValue float64) {
+	if metric, ok := s.Metrics[name]; ok {
+		newValue := *(metric.Value) + fValue
+		metric.Value = &newValue
+		s.Metrics[name] = metric
+	} else {
+		s.Metrics[name] = entities.MetricsJSON{
+			ID:    name,
+			MType: entities.Gauge,
+			Value: &fValue,
+		}
+	}
 }
 
-func (m *MemStorage) AllMetrics() map[string]string {
+func (s *Store) AllMetrics() map[string]string {
 	out := make(map[string]string)
-	for k, v := range m.Counters {
-		out[k] = fmt.Sprint(v)
-	}
-	for k, v := range m.Gauges {
+	for k, v := range s.Metrics {
 		out[k] = fmt.Sprint(v)
 	}
 	return out
+}
+
+func (s *Store) AllMetricsJSON() []entities.MetricsJSON {
+
+	metricsJSON := make([]entities.MetricsJSON, 0)
+
+	for _, metric := range s.Metrics {
+		metricsJSON = append(metricsJSON, metric)
+	}
+	return metricsJSON
 }

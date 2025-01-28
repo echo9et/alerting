@@ -7,12 +7,12 @@ import (
 func TestStorage(t *testing.T) {
 	tests := []struct {
 		name    string
-		storage *MemStorage
+		storage *Store
 		value   int64
 	}{
 		{
 			name:    "test set counter",
-			storage: NewMemStorage(),
+			storage: NewStore(),
 			value:   5, // errors.New("float"),
 		},
 	}

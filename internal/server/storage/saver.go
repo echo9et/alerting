@@ -12,7 +12,7 @@ import (
 )
 
 type Saver struct {
-	MemStorage    *MemStorage
+	Store         *Store
 	filename      string
 	isRestore     bool
 	storeInterval time.Duration
@@ -20,7 +20,7 @@ type Saver struct {
 
 func NewSaver(filename string, isRestore bool, duration time.Duration) (*Saver, error) {
 	saver := &Saver{
-		MemStorage:    NewMemStorage(),
+		Store:         NewStore(),
 		filename:      filename,
 		isRestore:     isRestore,
 		storeInterval: duration,
@@ -35,27 +35,48 @@ func NewSaver(filename string, isRestore bool, duration time.Duration) (*Saver, 
 		panic(err)
 	}
 
+	if saver.storeInterval != 0 {
+		ticker := time.NewTicker(saver.storeInterval)
+		quit := make(chan struct{})
+		go func() {
+			for {
+				select {
+				case <-ticker.C:
+					saver.saveData()
+				case <-quit:
+					ticker.Stop()
+				}
+			}
+		}()
+	}
+
 	return saver, nil
 }
 
 func (s *Saver) GetCounter(name string) (string, bool) {
-	return s.MemStorage.GetCounter(name)
+	return s.Store.GetCounter(name)
 }
 
 func (s *Saver) SetCounter(name string, iValue int64) {
-	s.MemStorage.SetCounter(name, iValue)
+	s.Store.SetCounter(name, iValue)
+	if s.storeInterval == 0 {
+		s.saveData()
+	}
 }
 
 func (s *Saver) GetGauge(name string) (string, bool) {
-	return s.MemStorage.GetGauge(name)
+	return s.Store.GetGauge(name)
 }
 
 func (s *Saver) SetGauge(name string, fValue float64) {
-	s.MemStorage.SetGauge(name, fValue)
+	s.Store.SetGauge(name, fValue)
+	if s.storeInterval == 0 {
+		s.saveData()
+	}
 }
 
 func (s *Saver) AllMetrics() map[string]string {
-	return s.MemStorage.AllMetrics()
+	return s.Store.AllMetrics()
 }
 
 func (s *Saver) restoreData() error {
@@ -73,13 +94,24 @@ func (s *Saver) restoreData() error {
 		return err
 	}
 
-	metrics := entities.DataJson{Data: make([]entities.MetricsJSON, 0)}
-	err = json.Unmarshal(data, &metrics)
+	metricsJSON := make([]entities.MetricsJSON, 0)
+	err = json.Unmarshal(data, &metricsJSON)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("READ METRICS", metrics)
+	for _, metric := range metricsJSON {
+		switch metric.MType {
+		case entities.Counter:
+			s.Store.SetCounter(metric.ID, *metric.Delta)
+		case entities.Gauge:
+			s.Store.SetGauge(metric.ID, *metric.Value)
+		default:
+			fmt.Println("Не удалось прочитать тип данных при восстановление данных")
+		}
+	}
+
+	fmt.Println("READ METRICS", metricsJSON)
 	return nil
 
 }
@@ -92,10 +124,8 @@ func (s *Saver) saveData() error {
 	}
 
 	writer := bufio.NewWriter(file)
-	jsonMetrics := entities.DataJson{Data: make([]entities.MetricsJSON, 0)}
-	metric := entities.MetricsJSON{ID: "fdf", MType: "counter"}
-	jsonMetrics.Data = append(jsonMetrics.Data, metric)
-	data, err := json.Marshal(&jsonMetrics)
+	metricsJSON := s.Store.AllMetricsJSON()
+	data, err := json.Marshal(&metricsJSON)
 	if err != nil {
 		return err
 	}
@@ -111,6 +141,6 @@ func (s *Saver) saveData() error {
 	}
 
 	// записываем буфер в файл
-	fmt.Println("WRITE METRICS", jsonMetrics)
+	fmt.Println("WRITE METRICS", metricsJSON)
 	return writer.Flush()
 }

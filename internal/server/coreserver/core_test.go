@@ -20,7 +20,7 @@ type want struct {
 }
 
 func TestStatusHandler(t *testing.T) {
-	s := storage.NewMemStorage()
+	s := storage.NewStore()
 	tests := []struct {
 		name string
 		want want
