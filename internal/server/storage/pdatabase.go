@@ -21,11 +21,12 @@ func NewPDatabase(a string) *Base {
 func (b *Base) Ping() bool {
 	fmt.Println(b.addr)
 
-	_, err := pgx.Connect(context.Background(), b.addr)
+	conn, err := pgx.Connect(context.Background(), b.addr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		return false
 	}
+	defer conn.Close(context.Background())
 
 	return true
 }
