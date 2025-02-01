@@ -140,6 +140,9 @@ func PingDatabase(w http.ResponseWriter, r *http.Request, addr string) {
 	s := storage.NewPDatabase(addr)
 	if !s.Ping() {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-type", "text/plain")
+		out := []byte("")
+		w.Write(out)
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
