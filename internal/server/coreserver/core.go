@@ -7,6 +7,7 @@ import (
 	"github.com/echo9et/alerting/internal/compgzip"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/handlers"
+	"github.com/echo9et/alerting/internal/server/storage"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -14,7 +15,7 @@ func middleware(h http.HandlerFunc) http.HandlerFunc {
 	return logger.RequestLogger(compgzip.GzipMiddleware(h))
 }
 
-func GetRouter(storage handlers.Storage) *chi.Mux {
+func GetRouter(addrDatabase string, storage handlers.Storage) *chi.Mux {
 	router := chi.NewRouter()
 	router.Get("/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricsHandle(w, r, storage)
@@ -37,11 +38,14 @@ func GetRouter(storage handlers.Storage) *chi.Mux {
 	router.Get("/value/{type}/{name}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
 	}))
+	router.Get("/ping", middleware(func(w http.ResponseWriter, r *http.Request) {
+		PingDatabase(w, r, addrDatabase)
+	}))
 	return router
 }
 
-func Run(addr string, storage handlers.Storage) error {
-	return http.ListenAndServe(addr, GetRouter(storage))
+func Run(addr, addrDatabase string, storage handlers.Storage) error {
+	return http.ListenAndServe(addr, GetRouter(addrDatabase, storage))
 }
 
 func metricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
@@ -127,4 +131,14 @@ func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Sto
 	if err := handlers.ReadMetricJSON(w, r, s); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	}
+}
+
+func PingDatabase(w http.ResponseWriter, r *http.Request, addr string) {
+	s := storage.NewPDatabase(addr)
+	if !s.Ping() {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+
 }

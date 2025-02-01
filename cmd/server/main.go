@@ -22,7 +22,7 @@ func main() {
 
 	logger.Initilization(cfg.LogLevel)
 
-	if err := coreserver.Run(cfg.AddrServer, storage); err != nil {
+	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, storage); err != nil {
 		panic(err)
 	}
 
