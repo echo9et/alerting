@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net"
 	"time"
 )
 
@@ -19,9 +20,16 @@ func NewPDatabase(a string) *Base {
 
 func (b *Base) Ping() bool {
 	fmt.Println(b.addr)
-	db, err := sql.Open("pgx", b.addr)
+	ip, port, err := net.SplitHostPort(b.addr)
 	if err != nil {
-		fmt.Println("dont open db")
+		fmt.Println("error parse addr")
+		return false
+	}
+	cmd := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		ip, port, `postgres`, `postgres`, `postgres`)
+	db, err := sql.Open("pgx", cmd)
+	if err != nil {
+		fmt.Println("dont open db", cmd)
 		return false
 	}
 	defer db.Close()
