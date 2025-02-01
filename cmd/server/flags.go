@@ -2,41 +2,68 @@ package main
 
 import (
 	"flag"
+	"net"
 	"os"
 	"strconv"
 )
 
-var flagAddrServer *string = flag.String("a", "localhost:8080", "server and port to run server")
-var flagLogLevel *string = flag.String("l", "info", "log level")
+type Config struct {
+	AddrServer    string
+	AddrDatabase  string
+	LogLevel      string
+	StoreInterval uint64
+	FilenameSave  string
+	RestoreData   bool
+}
 
-var flagStoreInterval *uint64 = flag.Uint64("i", 300, "save to file interval")
-var flagFilenameSave *string = flag.String("f", "data.json", "filename for save and restore data")
-var flagRestoreData *bool = flag.Bool("r", true, "is restor data from file")
+func ParseFlags() (*Config, error) {
+	cfg := &Config{}
+	flag.StringVar(&cfg.AddrServer, "a", "localhost:8080", "server and port to run server")
+	flag.StringVar(&cfg.AddrDatabase, "d", "localhost:5432", "address to postgres base")
+	flag.StringVar(&cfg.LogLevel, "l", "info", "log level")
+	flag.Uint64Var(&cfg.StoreInterval, "i", 300, "save to file interval")
+	flag.StringVar(&cfg.FilenameSave, "f", "data.json", "filename for save and restore data")
+	flag.BoolVar(&cfg.RestoreData, "r", true, "is restor data from file")
 
-func ParseFlags() {
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
-		*flagAddrServer = envRunAddr
+		cfg.AddrServer = envRunAddr
+	}
+
+	if envDatabaseAddr := os.Getenv("DATABASE_DSN"); envDatabaseAddr != "" {
+		cfg.AddrDatabase = envDatabaseAddr
 	}
 
 	if envRunLogLVL := os.Getenv("LOG_LVL"); envRunLogLVL != "" {
-		*flagLogLevel = envRunLogLVL
+		cfg.LogLevel = envRunLogLVL
 	}
 
 	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
 		uValue, err := strconv.ParseUint(string(envStoreInterval), 10, 64)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-		*flagStoreInterval = uValue
+		cfg.StoreInterval = uValue
 	}
 
 	if envFileNameSave := os.Getenv("FILE_STORAGE_PATH"); envFileNameSave != "" {
-		*flagFilenameSave = envFileNameSave
+		cfg.FilenameSave = envFileNameSave
 	}
 
 	if envRestoreData := os.Getenv("RESTORE"); envRestoreData != "" {
-		*flagRestoreData = envRestoreData == "true"
+		cfg.RestoreData = envRestoreData == "true"
 	}
 
 	flag.Parse()
+
+	_, _, err := net.SplitHostPort(cfg.AddrServer)
+	if err != nil {
+		return nil, err
+	}
+
+	_, _, err = net.SplitHostPort(cfg.AddrDatabase)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
 }
