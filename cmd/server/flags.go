@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net"
 	"os"
 	"strconv"
@@ -59,11 +60,11 @@ func ParseFlags() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	_, _, err = net.SplitHostPort(cfg.AddrDatabase)
-	if err != nil {
-		return nil, err
-	}
+	fmt.Println("---", cfg.AddrDatabase)
+	// _, _, err = net.SplitHostPort(cfg.AddrDatabase)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return cfg, nil
 }
