@@ -80,3 +80,7 @@ func (s *MemStore) AllMetricsJSON() []entities.MetricsJSON {
 	}
 	return metricsJSON
 }
+
+func (s *MemStore) Ping() bool {
+	return true
+}

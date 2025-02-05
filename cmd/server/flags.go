@@ -20,7 +20,7 @@ type Config struct {
 func ParseFlags() (*Config, error) {
 	cfg := &Config{}
 	flag.StringVar(&cfg.AddrServer, "a", "localhost:8080", "server and port to run server")
-	flag.StringVar(&cfg.AddrDatabase, "d", "localhost:5432", "address to postgres base")
+	flag.StringVar(&cfg.AddrDatabase, "d", "", "address to postgres base")
 	flag.StringVar(&cfg.LogLevel, "l", "info", "log level")
 	flag.Uint64Var(&cfg.StoreInterval, "i", 300, "save to file interval")
 	flag.StringVar(&cfg.FilenameSave, "f", "data.json", "filename for save and restore data")

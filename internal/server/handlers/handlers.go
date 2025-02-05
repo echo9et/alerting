@@ -17,6 +17,7 @@ type Storage interface {
 	GetGauge(string) (string, bool)
 	SetGauge(string, float64)
 	AllMetrics() map[string]string
+	Ping() bool
 }
 
 const (

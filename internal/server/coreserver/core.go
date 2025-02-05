@@ -7,7 +7,6 @@ import (
 	"github.com/echo9et/alerting/internal/compgzip"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/handlers"
-	"github.com/echo9et/alerting/internal/server/storage"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -39,10 +38,10 @@ func GetRouter(addrDatabase string, storage handlers.Storage) *chi.Mux {
 		metricHandle(w, r, storage)
 	}))
 	router.Get("/ping", middleware(func(w http.ResponseWriter, r *http.Request) {
-		PingDatabase(w, r, addrDatabase)
+		PingDatabase(w, r, addrDatabase, storage)
 	}))
 	router.Get("/ping/", middleware(func(w http.ResponseWriter, r *http.Request) {
-		PingDatabase(w, r, addrDatabase)
+		PingDatabase(w, r, addrDatabase, storage)
 	}))
 	return router
 }
@@ -136,8 +135,8 @@ func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Sto
 	}
 }
 
-func PingDatabase(w http.ResponseWriter, r *http.Request, addr string) {
-	s := storage.NewPDatabase(addr)
+func PingDatabase(w http.ResponseWriter, r *http.Request, addr string, s handlers.Storage) {
+	// s := storage.NewPDatabase(addr)
 	if !s.Ping() {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-type", "text/plain")

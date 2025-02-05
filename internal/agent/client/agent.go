@@ -48,6 +48,7 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 		fmt.Println("ERROR:", err)
 	}
 }
+
 func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
 	runtime.GC()
 	counter := time.Duration(0)

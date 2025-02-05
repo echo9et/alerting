@@ -18,6 +18,7 @@ type Store interface {
 	SetGauge(string, float64)
 	AllMetrics() map[string]string
 	AllMetricsJSON() []entities.MetricsJSON
+	Ping() bool
 }
 
 type Saver struct {
@@ -120,7 +121,7 @@ func (s *Saver) restoreData() error {
 		}
 	}
 
-	fmt.Println("READ METRICS", metricsJSON)
+	// fmt.Println("READ METRICS", metricsJSON)
 	return nil
 
 }
@@ -150,6 +151,10 @@ func (s *Saver) saveData() error {
 	}
 
 	// записываем буфер в файл
-	fmt.Println("WRITE METRICS", metricsJSON)
+	// fmt.Println("WRITE METRICS", metricsJSON)
 	return writer.Flush()
+}
+
+func (s *Saver) Ping() bool {
+	return s.Store.Ping()
 }
