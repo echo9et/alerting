@@ -49,22 +49,21 @@ func (b *Base) InitTable() error {
 	if b.conn == nil {
 		return fmt.Errorf("b.conn is nil")
 	}
-	_, err := b.conn.QueryContext(context.Background(),
-		`CREATE TABLE IF NOT EXISTS metrics_gauge (id serial PRIMARY KEY, name varchar(255) UNIQUE NOT NULL, value DOUBLE PRECISION NOT NULL);`)
-	// err := row.Scan()
+	rows, err := b.conn.QueryContext(context.Background(),
+		`CREATE TABLE IF NOT EXISTS metrics_gauge (name varchar(255) PRIMARY KEY UNIQUE NOT NULL, value DOUBLE PRECISION NOT NULL);`)
+
 	if err != nil {
 		print("metric gauge")
 		return err
 	}
-	_, err = b.conn.QueryContext(context.Background(),
-		`CREATE TABLE IF NOT EXISTS metrics_counter (id serial PRIMARY KEY, name varchar(255) UNIQUE NOT NULL, value INTEGER NOT NULL);`)
-	// err = row.Scan()
+	fmt.Println(rows)
+	rows, err = b.conn.QueryContext(context.Background(),
+		`CREATE TABLE IF NOT EXISTS metrics_counter (name varchar(255) PRIMARY KEY UNIQUE NOT NULL, value INTEGER NOT NULL);`)
 
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("Create table ok")
+	rows.Close()
 
 	return nil
 }
@@ -85,20 +84,77 @@ func (b *Base) Ping() bool {
 	return true
 }
 
-func (b *Base) GetCounter(string) (string, bool) {
-	return "", false
+func (b *Base) GetCounter(name string) (string, bool) {
+	query := `SELECT value FROM metrics_counter WHERE name=$1;`
+	var desc sql.NullString
+	err := b.conn.QueryRow(query, name).Scan(&desc)
+
+	if err != nil {
+		fmt.Println("ERROR GetCounter", err)
+		return "", false
+	}
+
+	return desc.String, true
 }
 
-func (b *Base) SetCounter(string, int64) {
+func (b *Base) SetCounter(name string, iValue int64) {
+	_, err := b.conn.Exec(
+		`INSERT INTO metrics_counter (name, value) 
+		VALUES ($1, $2) ON CONFLICT (name) 
+		DO UPDATE SET value = EXCLUDED.value;`, name, iValue)
+	if err != nil {
+		fmt.Println("---", err)
+	}
 }
 
-func (b *Base) GetGauge(string) (string, bool) {
-	return "", false
+func (b *Base) GetGauge(name string) (string, bool) {
+	query := `SELECT value FROM metrics_gauge WHERE name=$1;`
+	var desc sql.NullString
+	err := b.conn.QueryRow(query, name).Scan(&desc)
+
+	if err != nil {
+		fmt.Println("ERROR GetCounter", err)
+		return "", false
+	}
+
+	return desc.String, true
 }
 
-func (b *Base) SetGauge(string, float64) {
+func (b *Base) SetGauge(name string, fValue float64) {
+	_, err := b.conn.Exec(
+		`INSERT INTO metrics_gauge (name, value) 
+		VALUES ($1, $2) ON CONFLICT (name) 
+		DO UPDATE SET value = EXCLUDED.value;`, name, fValue)
+	if err != nil {
+		fmt.Println("---", err)
+	}
 }
 
 func (b *Base) AllMetrics() map[string]string {
-	return map[string]string{}
+	out := make(map[string]string)
+
+	query := `SELECT * FROM metrics_gauge
+			  UNION ALL
+		      SELECT * FROM metrics_counter;`
+	rows, err := b.conn.Query(query)
+	if err != nil {
+		fmt.Println("error request AllMetrics")
+		return out
+	}
+	defer rows.Close()
+
+	var name, value string
+	for rows.Next() {
+		err = rows.Scan(&name, &value)
+		if err != nil {
+			fmt.Println("error AllMetrics read data ")
+			return out
+		}
+		out[name] = value
+	}
+	err = rows.Err()
+	if err != nil {
+		fmt.Println("error AllMetrics rows data ")
+	}
+	return out
 }

@@ -21,6 +21,7 @@ func ParseFlags() (*Config, error) {
 	cfg := &Config{}
 	flag.StringVar(&cfg.AddrServer, "a", "localhost:8080", "server and port to run server")
 	flag.StringVar(&cfg.AddrDatabase, "d", "", "address to postgres base")
+	// flag.StringVar(&cfg.AddrDatabase, "d", "host=localhost user=echo9et password=123321 dbname=echo9et sslmode=disable", "address to postgres base")
 	flag.StringVar(&cfg.LogLevel, "l", "info", "log level")
 	flag.Uint64Var(&cfg.StoreInterval, "i", 300, "save to file interval")
 	flag.StringVar(&cfg.FilenameSave, "f", "data.json", "filename for save and restore data")
