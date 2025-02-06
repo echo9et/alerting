@@ -51,16 +51,22 @@ func (b *Base) InitTable() error {
 	}
 	rows, err := b.conn.QueryContext(context.Background(),
 		`CREATE TABLE IF NOT EXISTS metrics_gauge (name varchar(255) PRIMARY KEY UNIQUE NOT NULL, value DOUBLE PRECISION NOT NULL);`)
-
 	if err != nil {
-		print("metric gauge")
 		return err
 	}
-	fmt.Println(rows)
+	if rows.Err() != nil {
+		return err
+	}
+	rows.Close()
+
 	rows, err = b.conn.QueryContext(context.Background(),
 		`CREATE TABLE IF NOT EXISTS metrics_counter (name varchar(255) PRIMARY KEY UNIQUE NOT NULL, value INTEGER NOT NULL);`)
 
 	if err != nil {
+		return err
+	}
+
+	if rows.Err() != nil {
 		return err
 	}
 	rows.Close()
