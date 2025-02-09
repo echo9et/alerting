@@ -18,6 +18,7 @@ type Storage interface {
 	SetGauge(string, float64)
 	AllMetrics() map[string]string
 	Ping() bool
+	SetMetrics([]entities.MetricsJSON) error
 }
 
 const (
@@ -98,6 +99,21 @@ func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
 	w.WriteHeader(http.StatusOK)
 	w.Write(out)
 	return nil
+}
+
+func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
+	var metricsJSON = make([]entities.MetricsJSON, 0)
+	var buf bytes.Buffer
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(buf.Bytes(), &metricsJSON); err != nil {
+		return err
+	}
+
+	return s.SetMetrics(metricsJSON)
 }
 
 func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {

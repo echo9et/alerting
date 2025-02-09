@@ -25,6 +25,12 @@ func GetRouter(addrDatabase string, storage handlers.Storage) *chi.Mux {
 	router.Post("/update/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricJSONHandle(w, r, storage)
 	}))
+	router.Post("/updates", middleware(func(w http.ResponseWriter, r *http.Request) {
+		WriteMetricsJSONHandle(w, r, storage)
+	}))
+	router.Post("/updates/", middleware(func(w http.ResponseWriter, r *http.Request) {
+		WriteMetricsJSONHandle(w, r, storage)
+	}))
 	router.Post("/update/{type}/{name}/{value}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		setMetricHandle(w, r, storage)
 	}))
@@ -119,6 +125,21 @@ func WriteMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.St
 	}
 }
 
+func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if r.Header.Get("Content-type") != "application/json" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := handlers.WriteMetricsJSON(w, r, s); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
 func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)

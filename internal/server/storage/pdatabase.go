@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/echo9et/alerting/internal/entities"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -163,4 +164,48 @@ func (b *Base) AllMetrics() map[string]string {
 		fmt.Println("error AllMetrics rows data ")
 	}
 	return out
+}
+
+func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
+	tx, err := b.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	ctx := context.Background()
+
+	stmt_gauge, err := tx.PrepareContext(ctx,
+		`INSERT INTO metrics_gauge (name, value) 
+		VALUES ($1, $2) ON CONFLICT (name) 
+		DO UPDATE SET value = EXCLUDED.value;`)
+	if err != nil {
+		return err
+	}
+	defer stmt_gauge.Close()
+
+	stmt_counter, err := tx.PrepareContext(ctx,
+		`INSERT INTO metrics_counter (name, value) 
+		VALUES ($1, $2) ON CONFLICT (name) 
+		DO UPDATE SET value = EXCLUDED.value;`)
+	if err != nil {
+		return err
+	}
+	defer stmt_counter.Close()
+
+	for _, v := range mertics {
+		if v.MType == entities.Gauge {
+			_, err := stmt_gauge.ExecContext(ctx, v.ID, v.Value)
+			if err != nil {
+				return err
+			}
+		} else if v.MType == entities.Counter {
+			_, err := stmt_counter.ExecContext(ctx, v.ID, v.Delta)
+			if err != nil {
+				return err
+			}
+		} else {
+			fmt.Println("UNKNOW TYPE ", v.MType)
+		}
+	}
+	return tx.Commit()
 }

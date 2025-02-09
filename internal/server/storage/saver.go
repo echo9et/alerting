@@ -19,6 +19,7 @@ type Store interface {
 	AllMetrics() map[string]string
 	AllMetricsJSON() []entities.MetricsJSON
 	Ping() bool
+	SetMetrics([]entities.MetricsJSON) error
 }
 
 type Saver struct {
@@ -157,4 +158,8 @@ func (s *Saver) saveData() error {
 
 func (s *Saver) Ping() bool {
 	return s.Store.Ping()
+}
+
+func (s *Saver) SetMetrics(m []entities.MetricsJSON) error {
+	return s.Store.SetMetrics(m)
 }

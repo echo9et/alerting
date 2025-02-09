@@ -25,6 +25,68 @@ func NewAgent(addressServer string) *Agent {
 	}
 }
 
+func (a *Agent) compressMetrics() error {
+	metricsJSON := make([]entities.MetricsJSON, 0)
+	for key, value := range a.metrics.SupportMetrics {
+		metric := entities.MetricsJSON{}
+		var fValue float64
+		switch v := value.(type) {
+		case *uint64:
+			fValue = float64(*v)
+		case *uint32:
+			fValue = float64(*v)
+		case *float64:
+			fValue = *v
+		}
+		metric.Value = &fValue
+		metric.MType = entities.Gauge
+		metric.ID = key
+
+		metricsJSON = append(metricsJSON, metric)
+	}
+	metricsJSON = append(metricsJSON, entities.MetricsJSON{
+		ID:    "PollCount",
+		MType: entities.Counter,
+		Delta: &a.metrics.PollCount,
+	})
+
+	metricsJSON = append(metricsJSON, entities.MetricsJSON{
+		ID:    "RandomValue",
+		MType: entities.Gauge,
+		Value: &a.metrics.RandomValue,
+	})
+
+	data, err := json.Marshal(metricsJSON)
+	if err != nil {
+		fmt.Println("ERROR:", err)
+		return err
+	}
+	cd, err := CompressGzip(data)
+	if err != nil {
+		return err
+	}
+	return a.SendGzipToServer(cd)
+}
+
+func (a *Agent) SendGzipToServer(data []byte) error {
+	body := bytes.NewReader(data)
+
+	url := fmt.Sprintf("http://%s/updates", a.outServer)
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
 func (a *Agent) SendMetric(name string, value interface{}) {
 
 	var mj entities.MetricsJSON
@@ -47,6 +109,7 @@ func (a *Agent) SendMetric(name string, value interface{}) {
 	if err != nil {
 		fmt.Println("ERROR:", err)
 	}
+
 }
 
 func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
@@ -61,7 +124,8 @@ func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Dur
 		counter += reportInterval
 		if counter >= pollInterval {
 			counter = time.Duration(0)
-			a.pollMetrics()
+			a.compressMetrics()
+			// a.pollMetrics()
 		}
 	}
 }

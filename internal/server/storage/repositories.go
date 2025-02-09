@@ -84,3 +84,17 @@ func (s *MemStore) AllMetricsJSON() []entities.MetricsJSON {
 func (s *MemStore) Ping() bool {
 	return true
 }
+
+func (s *MemStore) SetMetrics(metrics []entities.MetricsJSON) error {
+	for _, v := range metrics {
+		if v.ID == entities.Gauge {
+			s.SetGauge(v.ID, *v.Value)
+		} else if v.ID == entities.Counter {
+			s.SetCounter(v.ID, *v.Delta)
+
+		} else {
+			fmt.Println("Unknow Type")
+		}
+	}
+	return nil
+}
