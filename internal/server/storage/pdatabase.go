@@ -186,7 +186,7 @@ func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
 	stmtCounter, err := tx.PrepareContext(ctx,
 		`INSERT INTO metrics_counter (name, value) 
 		VALUES ($1, $2) ON CONFLICT (name) 
-		DO UPDATE SET value = EXCLUDED.value;`)
+		DO UPDATE SET value =  metrics_counter.value + EXCLUDED.value;`)
 	if err != nil {
 		return err
 	}
