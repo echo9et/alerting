@@ -87,9 +87,9 @@ func (s *MemStore) Ping() bool {
 
 func (s *MemStore) SetMetrics(metrics []entities.MetricsJSON) error {
 	for _, v := range metrics {
-		if v.ID == entities.Gauge {
+		if v.MType == entities.Gauge {
 			s.SetGauge(v.ID, *v.Value)
-		} else if v.ID == entities.Counter {
+		} else if v.MType == entities.Counter {
 			s.SetCounter(v.ID, *v.Delta)
 
 		} else {

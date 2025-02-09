@@ -174,32 +174,32 @@ func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
 	defer tx.Rollback()
 	ctx := context.Background()
 
-	stmt_gauge, err := tx.PrepareContext(ctx,
+	stmtGauge, err := tx.PrepareContext(ctx,
 		`INSERT INTO metrics_gauge (name, value) 
 		VALUES ($1, $2) ON CONFLICT (name) 
 		DO UPDATE SET value = EXCLUDED.value;`)
 	if err != nil {
 		return err
 	}
-	defer stmt_gauge.Close()
+	defer stmtGauge.Close()
 
-	stmt_counter, err := tx.PrepareContext(ctx,
+	stmtCounter, err := tx.PrepareContext(ctx,
 		`INSERT INTO metrics_counter (name, value) 
 		VALUES ($1, $2) ON CONFLICT (name) 
 		DO UPDATE SET value = EXCLUDED.value;`)
 	if err != nil {
 		return err
 	}
-	defer stmt_counter.Close()
+	defer stmtCounter.Close()
 
 	for _, v := range mertics {
 		if v.MType == entities.Gauge {
-			_, err := stmt_gauge.ExecContext(ctx, v.ID, v.Value)
+			_, err := stmtGauge.ExecContext(ctx, v.ID, v.Value)
 			if err != nil {
 				return err
 			}
 		} else if v.MType == entities.Counter {
-			_, err := stmt_counter.ExecContext(ctx, v.ID, v.Delta)
+			_, err := stmtCounter.ExecContext(ctx, v.ID, v.Delta)
 			if err != nil {
 				return err
 			}
