@@ -107,7 +107,8 @@ func (b *Base) GetCounter(name string) (string, bool) {
 func (b *Base) SetCounter(name string, iValue int64) {
 	_, err := b.conn.Exec(
 		`INSERT INTO metrics_counter (name, value) 
-		VALUES ($1, $2) ON CONFLICT (name) 
+		VALUES ($1, $2) 
+		ON CONFLICT (name) 
 		DO UPDATE SET value = metrics_counter.value + EXCLUDED.value;`, name, iValue)
 	if err != nil {
 		fmt.Println("---", err)
@@ -185,8 +186,9 @@ func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
 
 	stmtCounter, err := tx.PrepareContext(ctx,
 		`INSERT INTO metrics_counter (name, value) 
-		VALUES ($1, $2) ON CONFLICT (name) 
-		DO UPDATE SET value =  metrics_counter.value + EXCLUDED.value;`)
+		VALUES ($1, $2) 
+		ON CONFLICT (name) 
+		DO UPDATE SET value = metrics_counter.value + EXCLUDED.value;`)
 	if err != nil {
 		return err
 	}
