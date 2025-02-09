@@ -108,7 +108,7 @@ func (b *Base) SetCounter(name string, iValue int64) {
 	_, err := b.conn.Exec(
 		`INSERT INTO metrics_counter (name, value) 
 		VALUES ($1, $2) ON CONFLICT (name) 
-		DO UPDATE SET value = EXCLUDED.value;`, name, iValue)
+		DO UPDATE SET value = value + EXCLUDED.value;`, name, iValue)
 	if err != nil {
 		fmt.Println("---", err)
 	}
