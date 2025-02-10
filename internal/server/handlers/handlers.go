@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/echo9et/alerting/internal/entities"
 	"github.com/go-chi/chi/v5"
@@ -96,12 +98,15 @@ func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s entities.Storage
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
+		fmt.Println(time.Now(), "ERROR: READFROM", err)
 		return err
 	}
 
 	if err = json.Unmarshal(buf.Bytes(), &metricsJSON); err != nil {
+		fmt.Println(time.Now(), "ERROR: UMARHAL", err)
 		return err
 	}
+	fmt.Println(time.Now(), metricsJSON)
 
 	return s.SetMetrics(metricsJSON)
 }

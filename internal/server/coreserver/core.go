@@ -140,8 +140,7 @@ func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s entities.S
 	}
 
 	if err := handlers.WriteMetricsJSON(w, r, s); err != nil {
-
-		fmt.Println("=== Error: WriteMetricsJSONHandle", 505)
+		fmt.Println(" === Error: WriteMetricsJSONHandle", 505)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
