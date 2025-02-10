@@ -171,40 +171,44 @@ func (b *Base) AllMetricsJSON() []entities.MetricsJSON {
 }
 
 func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
+	fmt.Println("---", time.Now(), "174")
 	tx, err := b.conn.Begin()
 	if err != nil {
 		return err
 	}
+	fmt.Println("---", time.Now(), "179")
 	defer tx.Rollback()
-	ctx := context.Background()
+	// ctx := context.Background()
 
-	stmtGauge, err := tx.PrepareContext(ctx,
+	stmtGauge, err := tx.Prepare(
 		`INSERT INTO metrics_gauge (name, value) 
 		VALUES ($1, $2) ON CONFLICT (name) 
 		DO UPDATE SET value = EXCLUDED.value;`)
 	if err != nil {
+		fmt.Println("---ERROR---", time.Now(), "188")
 		return err
 	}
 	defer stmtGauge.Close()
 
-	stmtCounter, err := tx.PrepareContext(ctx,
+	stmtCounter, err := tx.Prepare(
 		`INSERT INTO metrics_counter (name, value) 
 		VALUES ($1, $2) 
 		ON CONFLICT (name) 
 		DO UPDATE SET value = metrics_counter.value + EXCLUDED.value;`)
 	if err != nil {
+		fmt.Println("---ERROR---", time.Now(), "197")
 		return err
 	}
 	defer stmtCounter.Close()
 
 	for _, v := range mertics {
 		if v.MType == entities.Gauge {
-			_, err := stmtGauge.ExecContext(ctx, v.ID, v.Value)
+			_, err := stmtGauge.Exec(v.ID, v.Value)
 			if err != nil {
 				return err
 			}
 		} else if v.MType == entities.Counter {
-			_, err := stmtCounter.ExecContext(ctx, v.ID, v.Delta)
+			_, err := stmtCounter.Exec(v.ID, v.Delta)
 			if err != nil {
 				return err
 			}
@@ -212,5 +216,6 @@ func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
 			fmt.Println("UNKNOW TYPE ", v.MType)
 		}
 	}
+	fmt.Println("---END---", time.Now(), "219")
 	return tx.Commit()
 }
