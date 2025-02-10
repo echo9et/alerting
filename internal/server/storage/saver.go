@@ -11,25 +11,14 @@ import (
 	"github.com/echo9et/alerting/internal/entities"
 )
 
-type Store interface {
-	GetCounter(string) (string, bool)
-	SetCounter(string, int64)
-	GetGauge(string) (string, bool)
-	SetGauge(string, float64)
-	AllMetrics() map[string]string
-	AllMetricsJSON() []entities.MetricsJSON
-	Ping() bool
-	SetMetrics([]entities.MetricsJSON) error
-}
-
 type Saver struct {
-	Store         Store
+	Store         entities.Storage
 	filename      string
 	isRestore     bool
 	storeInterval time.Duration
 }
 
-func NewSaver(storage Store, filename string, isRestore bool, duration time.Duration) (*Saver, error) {
+func NewSaver(storage entities.Storage, filename string, isRestore bool, duration time.Duration) (*Saver, error) {
 	saver := &Saver{
 		Store:         storage,
 		filename:      filename,
@@ -42,6 +31,7 @@ func NewSaver(storage Store, filename string, isRestore bool, duration time.Dura
 			return nil, err
 		}
 	}
+
 	if err := saver.saveData(); err != nil {
 		panic(err)
 	}
@@ -88,6 +78,10 @@ func (s *Saver) SetGauge(name string, fValue float64) {
 
 func (s *Saver) AllMetrics() map[string]string {
 	return s.Store.AllMetrics()
+}
+
+func (s *Saver) AllMetricsJSON() []entities.MetricsJSON {
+	return s.Store.AllMetricsJSON()
 }
 
 func (s *Saver) restoreData() error {
@@ -141,18 +135,14 @@ func (s *Saver) saveData() error {
 		return err
 	}
 
-	// записываем событие в буфер
 	if _, err := writer.Write(data); err != nil {
 		return err
 	}
 
-	// добавляем перенос строки
 	if err := writer.WriteByte('\n'); err != nil {
 		return err
 	}
 
-	// записываем буфер в файл
-	// fmt.Println("WRITE METRICS", metricsJSON)
 	return writer.Flush()
 }
 

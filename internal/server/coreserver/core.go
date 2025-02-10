@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/echo9et/alerting/internal/compgzip"
+	"github.com/echo9et/alerting/internal/entities"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/handlers"
 	"github.com/go-chi/chi/v5"
@@ -14,7 +15,7 @@ func middleware(h http.HandlerFunc) http.HandlerFunc {
 	return logger.RequestLogger(compgzip.GzipMiddleware(h))
 }
 
-func GetRouter(addrDatabase string, storage handlers.Storage) *chi.Mux {
+func GetRouter(addrDatabase string, storage entities.Storage) *chi.Mux {
 	router := chi.NewRouter()
 	router.Get("/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricsHandle(w, r, storage)
@@ -52,11 +53,11 @@ func GetRouter(addrDatabase string, storage handlers.Storage) *chi.Mux {
 	return router
 }
 
-func Run(addr, addrDatabase string, storage handlers.Storage) error {
+func Run(addr, addrDatabase string, storage entities.Storage) error {
 	return http.ListenAndServe(addr, GetRouter(addrDatabase, storage))
 }
 
-func metricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+func metricHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -81,7 +82,7 @@ func metricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 	}
 }
 
-func metricsHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+func metricsHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -98,7 +99,7 @@ func metricsHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func setMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+func setMetricHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -109,7 +110,7 @@ func setMetricHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage)
 	}
 }
 
-func WriteMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+func WriteMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -125,7 +126,7 @@ func WriteMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.St
 	}
 }
 
-func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
 		fmt.Println("=== Error: WriteMetricsJSONHandle", 405)
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -144,7 +145,7 @@ func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.S
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
-func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Storage) {
+func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -160,7 +161,7 @@ func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s handlers.Sto
 	}
 }
 
-func PingDatabase(w http.ResponseWriter, r *http.Request, addr string, s handlers.Storage) {
+func PingDatabase(w http.ResponseWriter, r *http.Request, addr string, s entities.Storage) {
 	// s := storage.NewPDatabase(addr)
 	if !s.Ping() {
 		w.WriteHeader(http.StatusInternalServerError)

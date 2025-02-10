@@ -11,16 +11,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Storage interface {
-	GetCounter(string) (string, bool)
-	SetCounter(string, int64)
-	GetGauge(string) (string, bool)
-	SetGauge(string, float64)
-	AllMetrics() map[string]string
-	Ping() bool
-	SetMetrics([]entities.MetricsJSON) error
-}
-
 const (
 	Gauge   = "gauge"
 	Counter = "counter"
@@ -34,12 +24,12 @@ func (e *UnknowType) Error() string {
 	return "Unknow Type"
 }
 
-var supportMetrics = map[string]func(Storage, string, string) error{
+var supportMetrics = map[string]func(entities.Storage, string, string) error{
 	Gauge:   handlerGauge,
 	Counter: handlerCounters,
 }
 
-func handlerCounters(s Storage, name, sValue string) error {
+func handlerCounters(s entities.Storage, name, sValue string) error {
 	iValue, err := strconv.ParseInt(sValue, 10, 64)
 	if err != nil {
 		return err
@@ -48,7 +38,7 @@ func handlerCounters(s Storage, name, sValue string) error {
 	return nil
 }
 
-func handlerGauge(s Storage, name, sValue string) error {
+func handlerGauge(s entities.Storage, name, sValue string) error {
 	fValue, err := strconv.ParseFloat(sValue, 64)
 	if err != nil {
 		return err
@@ -57,7 +47,7 @@ func handlerGauge(s Storage, name, sValue string) error {
 	return nil
 }
 
-func WriteMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
+func WriteMetric(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	handlerMetric, ok := supportMetrics[chi.URLParam(r, "type")]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
@@ -74,7 +64,7 @@ func WriteMetric(w http.ResponseWriter, r *http.Request, s Storage) error {
 	return nil
 }
 
-func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
+func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	var mj entities.MetricsJSON
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
@@ -101,7 +91,7 @@ func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
 	return nil
 }
 
-func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
+func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	var metricsJSON = make([]entities.MetricsJSON, 0)
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
@@ -116,7 +106,7 @@ func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
 	return s.SetMetrics(metricsJSON)
 }
 
-func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
+func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	var mj entities.MetricsJSON
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r.Body)
@@ -142,7 +132,7 @@ func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s Storage) error {
 	return nil
 }
 
-func getMetricsJSON(s Storage, mj *entities.MetricsJSON) error {
+func getMetricsJSON(s entities.Storage, mj *entities.MetricsJSON) error {
 	switch mj.MType {
 	case Counter:
 		value, status := s.GetCounter(mj.ID)
@@ -163,7 +153,7 @@ func getMetricsJSON(s Storage, mj *entities.MetricsJSON) error {
 	return nil
 }
 
-func saveMetricsJSON(s Storage, mj entities.MetricsJSON) error {
+func saveMetricsJSON(s entities.Storage, mj entities.MetricsJSON) error {
 	switch mj.MType {
 	case Counter:
 		s.SetCounter(mj.ID, *mj.Delta)

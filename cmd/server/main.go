@@ -3,9 +3,9 @@ package main
 import (
 	"time"
 
+	"github.com/echo9et/alerting/internal/entities"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/coreserver"
-	"github.com/echo9et/alerting/internal/server/handlers"
 	"github.com/echo9et/alerting/internal/server/storage"
 )
 
@@ -16,7 +16,7 @@ func main() {
 		panic(err)
 	}
 
-	var store handlers.Storage
+	var store entities.Storage
 	if cfg.AddrDatabase != "" {
 		store, err = storage.NewPDatabase(cfg.AddrDatabase)
 		if err != nil {

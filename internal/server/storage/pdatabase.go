@@ -28,8 +28,6 @@ func NewPDatabase(a string) (*Base, error) {
 }
 
 func (b *Base) Open() error {
-	// host=localhost user=echo9et password=123321 dbname=echo9et sslmode=disable
-
 	bd, err := sql.Open("pgx", b.addr)
 	if err != nil {
 		fmt.Println("---", err)
@@ -164,6 +162,11 @@ func (b *Base) AllMetrics() map[string]string {
 	if err != nil {
 		fmt.Println("error AllMetrics rows data ")
 	}
+	return out
+}
+
+func (b *Base) AllMetricsJSON() []entities.MetricsJSON {
+	out := make([]entities.MetricsJSON, 0)
 	return out
 }
 
