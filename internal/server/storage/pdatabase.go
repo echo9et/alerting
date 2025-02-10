@@ -59,7 +59,7 @@ func (b *Base) InitTable() error {
 	rows.Close()
 
 	rows, err = b.conn.QueryContext(context.Background(),
-		`CREATE TABLE IF NOT EXISTS metrics_counter (name varchar(255) PRIMARY KEY UNIQUE NOT NULL, value INTEGER NOT NULL);`)
+		`CREATE TABLE IF NOT EXISTS metrics_counter (name varchar(255) PRIMARY KEY UNIQUE NOT NULL, value bigint NOT NULL);`)
 
 	if err != nil {
 		return err
