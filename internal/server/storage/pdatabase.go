@@ -205,11 +205,13 @@ func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
 		if v.MType == entities.Gauge {
 			_, err := stmtGauge.Exec(v.ID, v.Value)
 			if err != nil {
+				fmt.Println("---ERROR---", time.Now(), "208", err)
 				return err
 			}
 		} else if v.MType == entities.Counter {
 			_, err := stmtCounter.Exec(v.ID, v.Delta)
 			if err != nil {
+				fmt.Println("---ERROR---", time.Now(), "209", err)
 				return err
 			}
 		} else {
