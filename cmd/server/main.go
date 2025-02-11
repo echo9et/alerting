@@ -18,11 +18,13 @@ func main() {
 
 	var store entities.Storage
 	if cfg.AddrDatabase != "" {
+		fmt.Println("start with postgres")
 		store, err = storage.NewPDatabase(cfg.AddrDatabase)
 		if err != nil {
 			panic(err)
 		}
 	} else {
+		fmt.Println("start with memory store")
 		store, err = storage.NewSaver(storage.NewMemStore(), cfg.FilenameSave, cfg.RestoreData, time.Duration(cfg.StoreInterval)*time.Second)
 		if err != nil {
 			panic(err)
