@@ -179,6 +179,7 @@ func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
 			if !isRunReplay(err) {
 				break
 			}
+			fmt.Println("---", time.Now(), "ERROR: requestSaveMerics", err)
 			time.Sleep(dealy)
 		}
 	}
@@ -188,6 +189,7 @@ func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
 func (b *Base) requestSaveMerics(mertics []entities.MetricsJSON) error {
 	tx, err := b.conn.Begin()
 	if err != nil {
+		fmt.Println("---", err)
 		return err
 	}
 	defer tx.Rollback()
@@ -198,6 +200,7 @@ func (b *Base) requestSaveMerics(mertics []entities.MetricsJSON) error {
 		ON CONFLICT (name) 
 		DO UPDATE SET value = EXCLUDED.value;`)
 	if err != nil {
+		fmt.Println("---", err)
 		return err
 	}
 	defer stmtGauge.Close()
@@ -208,6 +211,7 @@ func (b *Base) requestSaveMerics(mertics []entities.MetricsJSON) error {
 		ON CONFLICT (name) 
 		DO UPDATE SET value = metrics_counter.value + EXCLUDED.value;`)
 	if err != nil {
+		fmt.Println("---", err)
 		return err
 	}
 	defer stmtCounter.Close()
@@ -216,18 +220,23 @@ func (b *Base) requestSaveMerics(mertics []entities.MetricsJSON) error {
 		if v.MType == entities.Gauge {
 			_, err := stmtGauge.Exec(v.ID, v.Value)
 			if err != nil {
+				fmt.Println("---", err)
 				return err
 			}
 		} else if v.MType == entities.Counter {
 			_, err := stmtCounter.Exec(v.ID, v.Delta)
 			fmt.Println("updates/ Counter", v.ID, *v.Delta)
 			if err != nil {
+				fmt.Println("---", err)
 				return err
 			}
 		} else {
+
+			fmt.Println("Неизвестный тип метрики ", err)
 			return errors.New("Неизвестный тип метрики " + v.ID)
 		}
 	}
+	fmt.Println("All right commit ")
 	return tx.Commit()
 }
 
