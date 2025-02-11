@@ -24,7 +24,7 @@ func main() {
 			panic(err)
 		}
 	} else {
-		fmt.Println("start with memory store")
+		fmt.Println("start with mem storage")
 		store, err = storage.NewSaver(storage.NewMemStore(), cfg.FilenameSave, cfg.RestoreData, time.Duration(cfg.StoreInterval)*time.Second)
 		if err != nil {
 			panic(err)

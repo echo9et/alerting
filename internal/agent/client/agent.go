@@ -48,7 +48,6 @@ func (a *Agent) pollMetrics() error {
 		fmt.Println("ERROR:", err)
 		return err
 	}
-
 	cd, err := CompressGzip(data)
 	if err != nil {
 		return err
@@ -93,7 +92,7 @@ func (a *Agent) dataJSON() []entities.MetricsJSON {
 
 func (a *Agent) SendToServer(data []byte) error {
 	body := bytes.NewReader(data)
-	url := fmt.Sprintf("http://%s/updates", a.outServer)
+	url := fmt.Sprintf("http://%s/updates/", a.outServer)
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return err
@@ -106,7 +105,6 @@ func (a *Agent) SendToServer(data []byte) error {
 		return err
 	}
 	defer resp.Body.Close()
-
 	return nil
 }
 
