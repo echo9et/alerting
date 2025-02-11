@@ -1,24 +1,20 @@
 package entities
 
-type CounterStorage interface {
+type ManagerValues interface {
+	GetGauge(string) (string, bool)
+	SetGauge(string, float64)
 	GetCounter(string) (string, bool)
 	SetCounter(string, int64)
 }
 
-type GaugeStorage interface {
-	GetGauge(string) (string, bool)
-	SetGauge(string, float64)
-}
-
-type WorkerJSON interface {
+type ManagerJSON interface {
 	AllMetricsJSON() []MetricsJSON
 	SetMetrics([]MetricsJSON) error
 }
 
 type Storage interface {
-	WorkerJSON
-	CounterStorage
-	GaugeStorage
+	ManagerJSON
+	ManagerValues
 
 	AllMetrics() map[string]string
 	Ping() bool

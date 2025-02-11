@@ -161,7 +161,6 @@ func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Sto
 }
 
 func PingDatabase(w http.ResponseWriter, r *http.Request, addr string, s entities.Storage) {
-	// s := storage.NewPDatabase(addr)
 	if !s.Ping() {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-type", "text/plain")
@@ -170,5 +169,4 @@ func PingDatabase(w http.ResponseWriter, r *http.Request, addr string, s entitie
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
-
 }

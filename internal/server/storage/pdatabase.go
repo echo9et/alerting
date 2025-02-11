@@ -3,10 +3,13 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/echo9et/alerting/internal/entities"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -74,7 +77,6 @@ func (b *Base) InitTable() error {
 }
 
 func (b *Base) Ping() bool {
-
 	defer b.conn.Close()
 	if b.conn == nil {
 		fmt.Println("---", "Ping nil b.conn")
@@ -171,21 +173,30 @@ func (b *Base) AllMetricsJSON() []entities.MetricsJSON {
 }
 
 func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
-	fmt.Println("---", time.Now(), "174")
+	var err error
+	for _, dealy := range []time.Duration{1 * time.Second, 2 * time.Second, 5 * time.Second} {
+		if err = b.requestSaveMerics(mertics); err != nil {
+			if !isRunReplay(err) {
+				break
+			}
+			time.Sleep(dealy)
+		}
+	}
+	return err
+}
+
+func (b *Base) requestSaveMerics(mertics []entities.MetricsJSON) error {
 	tx, err := b.conn.Begin()
 	if err != nil {
 		return err
 	}
-	fmt.Println("---", time.Now(), "179")
 	defer tx.Rollback()
-	// ctx := context.Background()
 
 	stmtGauge, err := tx.Prepare(
 		`INSERT INTO metrics_gauge (name, value) 
 		VALUES ($1, $2) ON CONFLICT (name) 
 		DO UPDATE SET value = EXCLUDED.value;`)
 	if err != nil {
-		fmt.Println("---ERROR---", time.Now(), "188")
 		return err
 	}
 	defer stmtGauge.Close()
@@ -196,7 +207,6 @@ func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
 		ON CONFLICT (name) 
 		DO UPDATE SET value = metrics_counter.value + EXCLUDED.value;`)
 	if err != nil {
-		fmt.Println("---ERROR---", time.Now(), "197")
 		return err
 	}
 	defer stmtCounter.Close()
@@ -205,19 +215,37 @@ func (b *Base) SetMetrics(mertics []entities.MetricsJSON) error {
 		if v.MType == entities.Gauge {
 			_, err := stmtGauge.Exec(v.ID, v.Value)
 			if err != nil {
-				fmt.Println("---ERROR---", time.Now(), "208", err)
 				return err
 			}
 		} else if v.MType == entities.Counter {
 			_, err := stmtCounter.Exec(v.ID, v.Delta)
 			if err != nil {
-				fmt.Println("---ERROR---", time.Now(), "209", err)
 				return err
 			}
 		} else {
 			fmt.Println("UNKNOW TYPE ", v.MType)
 		}
 	}
-	fmt.Println("---END---", time.Now(), "219")
 	return tx.Commit()
+}
+
+func isRunReplay(err error) bool {
+	fmt.Printf("ошибка при обработке запроса к postgres: %v\n", err)
+	if pgErr, ok := err.(*pgconn.PgError); ok {
+		switch pgErr.Code {
+		case pgerrcode.SerializationFailure:
+			return true
+		case pgerrcode.LockNotAvailable:
+			return true
+		case pgerrcode.ConnectionException:
+			return true
+		case pgerrcode.AdminShutdown:
+			return true
+		case pgerrcode.CrashShutdown:
+			return true
+		case pgerrcode.CannotConnectNow:
+			return true
+		}
+	}
+	return errors.Is(err, sql.ErrConnDone)
 }

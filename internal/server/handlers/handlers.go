@@ -26,12 +26,12 @@ func (e *UnknowType) Error() string {
 	return "Unknow Type"
 }
 
-var supportMetrics = map[string]func(entities.Storage, string, string) error{
+var supportMetrics = map[string]func(entities.ManagerValues, string, string) error{
 	Gauge:   handlerGauge,
 	Counter: handlerCounters,
 }
 
-func handlerCounters(s entities.Storage, name, sValue string) error {
+func handlerCounters(s entities.ManagerValues, name, sValue string) error {
 	iValue, err := strconv.ParseInt(sValue, 10, 64)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func handlerCounters(s entities.Storage, name, sValue string) error {
 	return nil
 }
 
-func handlerGauge(s entities.Storage, name, sValue string) error {
+func handlerGauge(s entities.ManagerValues, name, sValue string) error {
 	fValue, err := strconv.ParseFloat(sValue, 64)
 	if err != nil {
 		return err
