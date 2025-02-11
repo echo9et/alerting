@@ -97,7 +97,7 @@ func (b *Base) GetCounter(name string) (string, bool) {
 	err := b.conn.QueryRow(query, name).Scan(&desc)
 
 	if err != nil {
-		fmt.Println("ERROR GetCounter", err)
+		fmt.Println(" ERROR GetCounter", err)
 		return "", false
 	}
 
@@ -121,7 +121,7 @@ func (b *Base) GetGauge(name string) (string, bool) {
 	err := b.conn.QueryRow(query, name).Scan(&desc)
 
 	if err != nil {
-		fmt.Println("ERROR GetCounter", err)
+		fmt.Println("ERROR GetCounter ", name, err)
 		return "", false
 	}
 
@@ -194,7 +194,8 @@ func (b *Base) requestSaveMerics(mertics []entities.MetricsJSON) error {
 
 	stmtGauge, err := tx.Prepare(
 		`INSERT INTO metrics_gauge (name, value) 
-		VALUES ($1, $2) ON CONFLICT (name) 
+		VALUES ($1, $2) 
+		ON CONFLICT (name) 
 		DO UPDATE SET value = EXCLUDED.value;`)
 	if err != nil {
 		return err
@@ -223,7 +224,7 @@ func (b *Base) requestSaveMerics(mertics []entities.MetricsJSON) error {
 				return err
 			}
 		} else {
-			fmt.Println("UNKNOW TYPE ", v.MType)
+			return errors.New("Неизвестный тип метрики " + v.ID)
 		}
 	}
 	return tx.Commit()
