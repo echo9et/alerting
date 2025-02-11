@@ -97,7 +97,7 @@ func (b *Base) GetCounter(name string) (string, bool) {
 	err := b.conn.QueryRow(query, name).Scan(&desc)
 
 	if err != nil {
-		fmt.Println(" ERROR GetCounter", err)
+		fmt.Println("ERROR GetGauge ", name, err)
 		return "", false
 	}
 
@@ -121,7 +121,7 @@ func (b *Base) GetGauge(name string) (string, bool) {
 	err := b.conn.QueryRow(query, name).Scan(&desc)
 
 	if err != nil {
-		fmt.Println("ERROR GetCounter ", name, err)
+		fmt.Println("ERROR GetGauge ", name, err)
 		return "", false
 	}
 
