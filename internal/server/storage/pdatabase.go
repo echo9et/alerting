@@ -220,7 +220,7 @@ func (b *Base) requestSaveMerics(mertics []entities.MetricsJSON) error {
 			}
 		} else if v.MType == entities.Counter {
 			_, err := stmtCounter.Exec(v.ID, v.Delta)
-			fmt.Println("updates/ Counter", v.ID, v.Delta)
+			fmt.Println("updates/ Counter", v.ID, *v.Delta)
 			if err != nil {
 				return err
 			}
