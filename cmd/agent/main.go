@@ -7,9 +7,9 @@ import (
 
 func main() {
 	// time.Sleep(3 * time.Second)
-	config, err := GetConfig()
-	if err != nil {
-		panic(err)
+	config, status := GetConfig()
+	if !status {
+		panic("Не верно проинцелизирован конфиг файл")
 	}
 	a := client.NewAgent(config.AddrServer)
 	r := time.Duration(config.ReportTimeout) * time.Second

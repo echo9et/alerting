@@ -35,7 +35,7 @@ func GetRouter(addrDatabase string, storage entities.Storage) *chi.Mux {
 	router.Get("/value/{type}/{name}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
 	}))
-	router.Get("/ping/", middleware(func(w http.ResponseWriter, r *http.Request) {
+	router.Get("/ping", middleware(func(w http.ResponseWriter, r *http.Request) {
 		PingDatabase(w, r, addrDatabase, storage)
 	}))
 	return router

@@ -1,12 +1,14 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"os"
 	"strconv"
 	"net"
+	"fmt"
 )
+
+
 
 type Config struct {
 	AddrServer    string
@@ -15,22 +17,25 @@ type Config struct {
 }
 
 
-func (cfg Config)isValid() error{
+func (cfg Config)isValid() bool{
 	_, _, err := net.SplitHostPort(cfg.AddrServer)
 	if err != nil {
-		return errors.New("Ошибка в передачи пармерта сервера")
+		fmt.Println("Ошибка в передачи пармерта сервера")
+		return false
 	}
 	if cfg.PollTimeout < 1 {
-		return errors.New("Частота отправки данных на сервер должна быть больше 0")
+		fmt.Println("Частота отправки данных на сервер должна быть больше 0")
+		return false
 	}
 
 	if cfg.ReportTimeout < 1 {
-		return errors.New("Частота снятия данных должна быть больше 0")
+		fmt.Println("Частота снятия данных должна быть больше 0")
+		return false
 	}
-	return nil
+	return true
 }
 
-func GetConfig() (*Config, error){
+func GetConfig() (*Config, bool){
 	cfg := &Config{}
 	flag.StringVar(&cfg.AddrServer, "a", "localhost:8080", "server and port to run server")
 	flag.Int64Var(&cfg.PollTimeout, "p", 2, "pool interval")
