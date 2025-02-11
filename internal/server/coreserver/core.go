@@ -20,14 +20,8 @@ func GetRouter(addrDatabase string, storage entities.Storage) *chi.Mux {
 	router.Get("/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricsHandle(w, r, storage)
 	}))
-	router.Post("/update", middleware(func(w http.ResponseWriter, r *http.Request) {
-		WriteMetricJSONHandle(w, r, storage)
-	}))
 	router.Post("/update/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricJSONHandle(w, r, storage)
-	}))
-	router.Post("/updates", middleware(func(w http.ResponseWriter, r *http.Request) {
-		WriteMetricsJSONHandle(w, r, storage)
 	}))
 	router.Post("/updates/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricsJSONHandle(w, r, storage)
@@ -38,14 +32,8 @@ func GetRouter(addrDatabase string, storage entities.Storage) *chi.Mux {
 	router.Post("/value/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		ReadMetricJSONHandle(w, r, storage)
 	}))
-	router.Post("/value", middleware(func(w http.ResponseWriter, r *http.Request) {
-		ReadMetricJSONHandle(w, r, storage)
-	}))
 	router.Get("/value/{type}/{name}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
-	}))
-	router.Get("/ping", middleware(func(w http.ResponseWriter, r *http.Request) {
-		PingDatabase(w, r, addrDatabase, storage)
 	}))
 	router.Get("/ping/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		PingDatabase(w, r, addrDatabase, storage)
