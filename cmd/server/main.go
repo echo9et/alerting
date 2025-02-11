@@ -2,7 +2,7 @@ package main
 
 import (
 	"time"
-
+	"fmt"
 	"github.com/echo9et/alerting/internal/entities"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/coreserver"
