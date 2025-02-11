@@ -106,7 +106,6 @@ func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s entities.Storage
 		fmt.Println(time.Now(), "ERROR: UMARHAL", err)
 		return err
 	}
-	fmt.Println(time.Now(), metricsJSON)
 
 	return s.SetMetrics(metricsJSON)
 }
