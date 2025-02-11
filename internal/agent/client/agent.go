@@ -113,11 +113,11 @@ func CompressGzip(data []byte) ([]byte, error) {
 	gz := gzip.NewWriter(&b)
 	_, err := gz.Write(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed write data to compress temporary buffer: %v", err)
+		return nil, fmt.Errorf("Failed write data to compress temporary buffer: %v", err)
 	}
 	err = gz.Close()
 	if err != nil {
-		return nil, fmt.Errorf("failed compress data: %v", err)
+		return nil, fmt.Errorf("Failed compress data: %v", err)
 	}
 	return b.Bytes(), nil
 }
