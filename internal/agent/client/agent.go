@@ -2,6 +2,8 @@ package client
 
 import (
 	"bytes"
+	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -9,10 +11,11 @@ import (
 	"time"
 
 	"github.com/echo9et/alerting/internal/agent/metrics"
+	"github.com/echo9et/alerting/internal/entities"
 )
 
 type Agent struct {
-	metrics   metrics.Metrics
+	metrics   *metrics.Metrics
 	outServer string
 }
 
@@ -22,24 +25,7 @@ func NewAgent(addressServer string) *Agent {
 	}
 }
 
-func (a Agent) SendMetric(name string, value interface{}) {
-	var url string
-	switch v := value.(type) {
-	case float64:
-		url = fmt.Sprintf("http://%s/update/gauge/%s/%v", a.outServer, name, v)
-	case int64:
-		url = fmt.Sprintf("http://%s/update/counter/%s/%v", a.outServer, name, v)
-	}
-
-	r := bytes.NewReader([]byte(``))
-	resp, err := http.Post(url, "text/plain", r)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		return
-	}
-	defer resp.Body.Close()
-}
-func (a *Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
+func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
 	runtime.GC()
 	counter := time.Duration(0)
 	for {
@@ -51,24 +37,87 @@ func (a *Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Du
 		counter += reportInterval
 		if counter >= pollInterval {
 			counter = time.Duration(0)
-			a.pullMetrics()
+			a.pollMetrics()
 		}
 	}
 }
 
-func (a *Agent) pullMetrics() {
+func (a *Agent) pollMetrics() error {
+	data, err := json.Marshal(a.dataJSON())
+	if err != nil {
+		fmt.Println("ERROR:", err)
+		return err
+	}
+	cd, err := CompressGzip(data)
+	if err != nil {
+		return err
+	}
+
+	return a.SendToServer(cd)
+}
+
+func (a *Agent) dataJSON() []entities.MetricsJSON {
+	metrics := make([]entities.MetricsJSON, 0)
 	for key, value := range a.metrics.SupportMetrics {
-		var sendValue float64
+		metric := entities.MetricsJSON{}
+		var fValue float64
 		switch v := value.(type) {
 		case *uint64:
-			sendValue = float64(*v)
+			fValue = float64(*v)
 		case *uint32:
-			sendValue = float64(*v)
+			fValue = float64(*v)
 		case *float64:
-			sendValue = *v
+			fValue = *v
 		}
-		a.SendMetric(key, sendValue)
+		metric.Value = &fValue
+		metric.MType = entities.Gauge
+		metric.ID = key
+
+		metrics = append(metrics, metric)
 	}
-	a.SendMetric("PollCount", a.metrics.PollCount)
-	a.SendMetric("RandomValue", a.metrics.RandomValue)
+	metrics = append(metrics, entities.MetricsJSON{
+		ID:    "PollCount",
+		MType: entities.Counter,
+		Delta: &a.metrics.PollCount,
+	})
+
+	metrics = append(metrics, entities.MetricsJSON{
+		ID:    "RandomValue",
+		MType: entities.Gauge,
+		Value: &a.metrics.RandomValue,
+	})
+
+	return metrics
+}
+
+func (a *Agent) SendToServer(data []byte) error {
+	body := bytes.NewReader(data)
+	url := fmt.Sprintf("http://%s/updates/", a.outServer)
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
+func CompressGzip(data []byte) ([]byte, error) {
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	_, err := gz.Write(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed write data to compress temporary buffer: %v", err)
+	}
+	err = gz.Close()
+	if err != nil {
+		return nil, fmt.Errorf("failed compress data: %v", err)
+	}
+	return b.Bytes(), nil
 }
