@@ -4,61 +4,35 @@ import (
 	"flag"
 	"os"
 	"strconv"
-	"net"
-	"fmt"
 )
 
+var addrServer *string = flag.String("a", "localhost:8080", "address and port to run server")
+var pollTimeout *int = flag.Int("p", 2, "pool interval")
+var reportTimeout *int = flag.Int("r", 10, "report interval")
 
-
-type Config struct {
-	AddrServer    string
-	PollTimeout   int64
-	ReportTimeout int64
+func parseFlags() {
+	flag.Parse()
 }
 
-
-func (cfg Config)isValid() bool{
-	_, _, err := net.SplitHostPort(cfg.AddrServer)
-	if err != nil {
-		fmt.Println("Ошибка в передачи пармерта сервера")
-		return false
-	}
-	if cfg.PollTimeout < 1 {
-		fmt.Println("Частота отправки данных на сервер должна быть больше 0")
-		return false
-	}
-
-	if cfg.ReportTimeout < 1 {
-		fmt.Println("Частота снятия данных должна быть больше 0")
-		return false
-	}
-	return true
-}
-
-func GetConfig() (*Config, bool){
-	cfg := &Config{}
-	flag.StringVar(&cfg.AddrServer, "a", "localhost:8080", "server and port to run server")
-	flag.Int64Var(&cfg.PollTimeout, "p", 2, "pool interval")
-	flag.Int64Var(&cfg.ReportTimeout, "r", 10, "report interval")
-
+func initAgent() {
+	parseFlags()
 
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
-		cfg.AddrServer = envRunAddr
+		*addrServer = envRunAddr
 	}
 
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
-		value, ok := strconv.ParseInt(envReportInterval, 10, 0)
+		value, ok := strconv.Atoi(envReportInterval)
 		if ok == nil {
-			cfg.ReportTimeout = value
+			*reportTimeout = value
 		}
 	}
 
 	if envPoolInterval := os.Getenv("POLL_INTERVAL"); envPoolInterval != "" {
-		value, ok := strconv.ParseInt(envPoolInterval, 10, 0)
+		value, ok := strconv.Atoi(envPoolInterval)
 		if ok == nil {
-			cfg.PollTimeout = value
+			*pollTimeout = value
 		}
 	}
-	flag.Parse()
-	return cfg, cfg.isValid()
+
 }

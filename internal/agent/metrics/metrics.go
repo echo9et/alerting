@@ -1,8 +1,6 @@
 package metrics
 
-import (
-	"runtime"
-)
+import "runtime"
 
 type Metrics struct {
 	Memory         runtime.MemStats
@@ -11,9 +9,8 @@ type Metrics struct {
 	RandomValue    float64
 }
 
-func NewMetrics() *Metrics {
+func NewMetrics() Metrics {
 	metrics := Metrics{}
-	metrics.Memory.Alloc = 30
 	metrics.SupportMetrics = make(map[string]interface{})
 	metrics.SupportMetrics["Alloc"] = &metrics.Memory.Alloc
 	metrics.SupportMetrics["BuckHashSys"] = &metrics.Memory.BuckHashSys
@@ -43,5 +40,5 @@ func NewMetrics() *Metrics {
 	metrics.SupportMetrics["Sys"] = &metrics.Memory.Sys
 	metrics.SupportMetrics["TotalAlloc"] = &metrics.Memory.TotalAlloc
 
-	return &metrics
+	return metrics
 }
