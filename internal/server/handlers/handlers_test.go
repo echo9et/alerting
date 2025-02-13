@@ -8,7 +8,7 @@ import (
 )
 
 func TestHandlerCounters(t *testing.T) {
-	s := storage.NewMemStorage()
+	s := storage.NewMemStore()
 	tests := []struct {
 		name  string
 		value string
@@ -41,7 +41,7 @@ func TestHandlerCounters(t *testing.T) {
 }
 
 func TestHandlerGauge(t *testing.T) {
-	s := storage.NewMemStorage()
+	s := storage.NewMemStore()
 	tests := []struct {
 		name  string
 		value string
