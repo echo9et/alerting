@@ -175,6 +175,8 @@ func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s entities.S
 		fmt.Println(" === Error: WriteMetricsJSONHandle", 505)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 }
 func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
