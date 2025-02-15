@@ -30,22 +30,21 @@ func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 
 		ow := hashing.NewHashingWriter(w, secretKey)
 		hash := r.Header.Get("HashSHA256")
-		if hash == "" {
-			return
-		}
-		var buf bytes.Buffer
-		tee := io.TeeReader(r.Body, &buf)
+		if hash != "" {
+			var buf bytes.Buffer
+			tee := io.TeeReader(r.Body, &buf)
 
-		body, err := io.ReadAll(tee)
-		if err != nil {
-			slog.Error("не удалсть считать тело запроса")
-			w.WriteHeader(http.StatusBadRequest)
-		}
+			body, err := io.ReadAll(tee)
+			if err != nil {
+				slog.Error("не удалсть считать тело запроса")
+				w.WriteHeader(http.StatusBadRequest)
+			}
 
-		r.Body = io.NopCloser(&buf)
+			r.Body = io.NopCloser(&buf)
 
-		if hash != hashing.GetHash(body, secretKey) {
-			w.WriteHeader(http.StatusBadRequest)
+			if hash != hashing.GetHash(body, secretKey) {
+				w.WriteHeader(http.StatusBadRequest)
+			}
 		}
 		h.ServeHTTP(ow, r)
 	})
@@ -176,7 +175,6 @@ func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s entities.S
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 }
 func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
