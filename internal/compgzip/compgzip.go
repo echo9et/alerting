@@ -79,7 +79,6 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 		// Если подерживается комресия gzip - отдаем в cжатом виде
 		if isAcceptGzip {
 			contentTypes := r.Header.Get("Content-Type")
-			print(contentTypes)
 			if strings.Contains(contentTypes, "application/json") || strings.Contains(contentTypes, "text/html") || r.Header.Get("Accept") == "text/html" {
 				cw := newCompressWriter(w)
 				ow = cw

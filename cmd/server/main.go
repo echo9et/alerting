@@ -1,8 +1,9 @@
 package main
 
 import (
-	"time"
 	"fmt"
+	"time"
+
 	"github.com/echo9et/alerting/internal/entities"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/coreserver"
@@ -33,7 +34,7 @@ func main() {
 
 	logger.Initilization(cfg.LogLevel)
 
-	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store); err != nil {
+	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store, cfg.SecretKey); err != nil {
 		panic(err)
 	}
 
