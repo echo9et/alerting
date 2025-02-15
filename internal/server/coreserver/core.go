@@ -2,47 +2,80 @@ package coreserver
 
 import (
 	"fmt"
+	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/echo9et/alerting/internal/compgzip"
 	"github.com/echo9et/alerting/internal/entities"
+	"github.com/echo9et/alerting/internal/hashing"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/handlers"
 	"github.com/go-chi/chi/v5"
 )
 
-func middleware(h http.HandlerFunc) http.HandlerFunc {
-	return logger.RequestLogger(compgzip.GzipMiddleware(h))
+func middleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
+	if len(secretKey) != 0 {
+		return logger.RequestLogger(
+			HashMiddleware(compgzip.GzipMiddleware(h), secretKey))
+	}
+	return logger.RequestLogger(
+		compgzip.GzipMiddleware(h))
 }
 
-func GetRouter(addrDatabase string, storage entities.Storage) *chi.Mux {
+func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hash := r.Header.Get("HashSHA256")
+		if secretKey != "" {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				slog.Error("не удалсть считать тело запроса")
+				w.WriteHeader(http.StatusBadRequest)
+			}
+			if hash != hashing.GetHash(body, secretKey) {
+				slog.Error("хеш запроса не совпадает с хешом запроса")
+				w.WriteHeader(http.StatusBadRequest)
+			}
+		}
+	})
+}
+
+func GetRouter(addrDatabase string, storage entities.Storage, secretKey string) *chi.Mux {
 	router := chi.NewRouter()
+
 	router.Get("/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricsHandle(w, r, storage)
-	}))
+	}, secretKey))
+
 	router.Post("/update/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricJSONHandle(w, r, storage)
-	}))
+	}, secretKey))
+
 	router.Post("/updates/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricsJSONHandle(w, r, storage)
-	}))
+	}, secretKey))
+
 	router.Post("/update/{type}/{name}/{value}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		setMetricHandle(w, r, storage)
-	}))
+	}, secretKey))
+
 	router.Post("/value/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		ReadMetricJSONHandle(w, r, storage)
-	}))
+	}, secretKey))
+
 	router.Get("/value/{type}/{name}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
-	}))
+	}, secretKey))
+
 	router.Get("/ping", middleware(func(w http.ResponseWriter, r *http.Request) {
 		PingDatabase(w, r, addrDatabase, storage)
-	}))
+	}, secretKey))
+
 	return router
 }
 
-func Run(addr, addrDatabase string, storage entities.Storage) error {
-	return http.ListenAndServe(addr, GetRouter(addrDatabase, storage))
+func Run(addr, addrDatabase string, storage entities.Storage, secretKey string) error {
+	return http.ListenAndServe(addr, GetRouter(addrDatabase, storage, secretKey))
 }
 
 func metricHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
