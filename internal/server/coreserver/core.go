@@ -1,6 +1,7 @@
 package coreserver
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log/slog"
@@ -17,7 +18,8 @@ import (
 func middleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 	if secretKey != "" {
 		return logger.RequestLogger(
-			HashMiddleware(compgzip.GzipMiddleware(h), secretKey))
+			HashMiddleware(
+				compgzip.GzipMiddleware(h), secretKey))
 	}
 	return logger.RequestLogger(
 		compgzip.GzipMiddleware(h))
@@ -30,17 +32,18 @@ func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 		if hash == "" {
 			return
 		}
+		var buf bytes.Buffer
+		tee := io.TeeReader(r.Body, &buf)
 
-		body, err := io.ReadAll(r.Body)
+		body, err := io.ReadAll(tee)
 		if err != nil {
 			slog.Error("не удалсть считать тело запроса")
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
+		r.Body = io.NopCloser(&buf)
+
 		if hash != hashing.GetHash(body, secretKey) {
-			slog.Error(fmt.Sprintf("хеш запроса не совпадает с хешом запроса %s", hash))
-			slog.Error(fmt.Sprintf("secretKeyt server %s, len %v", secretKey, len(secretKey)))
-			slog.Error(fmt.Sprintf("secretKeyt client %s, len %v", hash, len(hash)))
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
