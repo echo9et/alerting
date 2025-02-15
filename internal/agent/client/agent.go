@@ -3,9 +3,6 @@ package client
 import (
 	"bytes"
 	"compress/gzip"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -15,6 +12,7 @@ import (
 
 	"github.com/echo9et/alerting/internal/agent/metrics"
 	"github.com/echo9et/alerting/internal/entities"
+	"github.com/echo9et/alerting/internal/hashing"
 )
 
 type Agent struct {
@@ -103,12 +101,8 @@ func (a *Agent) SendToServer(data []byte, secretKey string) error {
 	}
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-type", "application/json")
-	if len(secretKey) != 0 {
-		h := hmac.New(sha256.New, []byte(secretKey))
-		h.Write([]byte(data))
-		hashBytes := h.Sum(nil)
-		hashHex := hex.EncodeToString(hashBytes)
-		req.Header.Set("HashSHA256", hashHex)
+	if secretKey != "" {
+		req.Header.Set("HashSHA256", hashing.GetHash(data, secretKey))
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

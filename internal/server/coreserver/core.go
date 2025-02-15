@@ -26,19 +26,25 @@ func middleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hash := r.Header.Get("HashSHA256")
-		if hash != "" {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				slog.Error("не удалсть считать тело запроса")
-				w.WriteHeader(http.StatusBadRequest)
-			}
-			if hash != hashing.GetHash(body, secretKey) {
-				slog.Error(fmt.Sprintf("хеш запроса не совпадает с хешом запроса %s", hash))
-				slog.Error(fmt.Sprintf("secretKeyt server %s, len %v", secretKey, len(secretKey)))
-				slog.Error(fmt.Sprintf("secretKeyt client %s, len %v", hash, len(hash)))
-				w.WriteHeader(http.StatusBadRequest)
-			}
+		if hash == "" {
+			return
 		}
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			slog.Error("не удалсть считать тело запроса")
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		if hash != hashing.GetHash(body, secretKey) {
+			slog.Error(fmt.Sprintf("хеш запроса не совпадает с хешом запроса %s", hash))
+			slog.Error(fmt.Sprintf("secretKeyt server %s, len %v", secretKey, len(secretKey)))
+			slog.Error(fmt.Sprintf("secretKeyt client %s, len %v", hash, len(hash)))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		ow := hashing.NewHashingWriter(w, secretKey)
+		h.ServeHTTP(ow, r)
 	})
 }
 
