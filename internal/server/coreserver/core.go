@@ -47,7 +47,6 @@ func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 		if hash != hashing.GetHash(body, secretKey) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
-		ow.Header().Set("Content-type", "application/json")
 		h.ServeHTTP(ow, r)
 	})
 }
@@ -149,7 +148,7 @@ func WriteMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.St
 		return
 	}
 
-	if r.Header.Get("Content-type") != "application/json" {
+	if r.Header.Get("Content-Type") != "application/json" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -166,7 +165,7 @@ func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s entities.S
 		return
 	}
 
-	if r.Header.Get("Content-type") != "application/json" {
+	if r.Header.Get("Content-Type") != "application/json" {
 		fmt.Println("=== Error: WriteMetricsJSONHandle", 400)
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -183,7 +182,7 @@ func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Sto
 		return
 	}
 
-	if r.Header.Get("Content-type") != "application/json" {
+	if r.Header.Get("Content-Type") != "application/json" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -196,7 +195,7 @@ func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Sto
 func PingDatabase(w http.ResponseWriter, r *http.Request, addr string, s entities.Storage) {
 	if !s.Ping() {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Header().Set("Content-type", "text/plain")
+		w.Header().Set("Content-Type", "text/plain")
 		out := []byte(" ")
 		w.Write(out)
 	} else {
