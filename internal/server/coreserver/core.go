@@ -27,6 +27,7 @@ func middleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 
 func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 		ow := hashing.NewHashingWriter(w, secretKey)
 		hash := r.Header.Get("HashSHA256")
 		if hash == "" {
@@ -46,7 +47,7 @@ func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 		if hash != hashing.GetHash(body, secretKey) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
-
+		ow.Header().Set("Content-type", "application/json")
 		h.ServeHTTP(ow, r)
 	})
 }
