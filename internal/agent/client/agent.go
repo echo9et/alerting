@@ -100,7 +100,7 @@ func (a *Agent) SendToServer(data []byte, secretKey string) error {
 		return err
 	}
 	req.Header.Set("Content-Encoding", "gzip")
-	req.Header.Set("Content-type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	if secretKey != "" {
 		req.Header.Set("HashSHA256", hashing.GetHash(data, secretKey))
 	}
