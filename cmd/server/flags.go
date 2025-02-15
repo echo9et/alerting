@@ -57,7 +57,7 @@ func ParseFlags() (*Config, error) {
 	}
 
 	if envSecretKey := os.Getenv("KEY"); envSecretKey != "" {
-		cfg.AddrServer = envSecretKey
+		cfg.SecretKey = envSecretKey
 	}
 
 	flag.Parse()
