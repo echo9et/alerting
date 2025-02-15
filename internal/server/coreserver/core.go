@@ -33,7 +33,7 @@ func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 				w.WriteHeader(http.StatusBadRequest)
 			}
 			if hash != hashing.GetHash(body, secretKey) {
-				slog.Error("хеш запроса не совпадает с хешом запроса")
+				slog.Error(fmt.Sprintf("хеш запроса не совпадает с хешом запроса %s", hash))
 				w.WriteHeader(http.StatusBadRequest)
 			}
 		}
