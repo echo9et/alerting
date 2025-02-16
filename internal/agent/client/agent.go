@@ -12,6 +12,8 @@ import (
 
 	"github.com/echo9et/alerting/internal/agent/metrics"
 	"github.com/echo9et/alerting/internal/entities"
+	"github.com/echo9et/alerting/internal/hashing"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 type Agent struct {
@@ -25,7 +27,7 @@ func NewAgent(addressServer string) *Agent {
 	}
 }
 
-func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
+func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration, key string, rateLimit int64) {
 	runtime.GC()
 	counter := time.Duration(0)
 	for {
@@ -33,16 +35,19 @@ func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Dur
 		a.metrics.PollCount += 1
 		a.metrics.RandomValue = rand.Float64()
 		time.Sleep(reportInterval)
-
+		v, _ := mem.VirtualMemory()
+		a.metrics.SupportMetrics["TotalMemory"] = v.Total
+		a.metrics.SupportMetrics["FreeMemory"] = v.Free
+		a.metrics.SupportMetrics["CPUutilization1"] = runtime.NumCPU()
 		counter += reportInterval
 		if counter >= pollInterval {
 			counter = time.Duration(0)
-			a.pollMetrics()
+			a.pollMetrics(key)
 		}
 	}
 }
 
-func (a *Agent) pollMetrics() error {
+func (a *Agent) pollMetrics(secretKey string) error {
 	data, err := json.Marshal(a.dataJSON())
 	if err != nil {
 		fmt.Println("ERROR:", err)
@@ -53,7 +58,7 @@ func (a *Agent) pollMetrics() error {
 		return err
 	}
 
-	return a.SendToServer(cd)
+	return a.SendToServer(cd, secretKey)
 }
 
 func (a *Agent) dataJSON() []entities.MetricsJSON {
@@ -62,6 +67,10 @@ func (a *Agent) dataJSON() []entities.MetricsJSON {
 		metric := entities.MetricsJSON{}
 		var fValue float64
 		switch v := value.(type) {
+		case int:
+			fValue = float64(v)
+		case uint64:
+			fValue = float64(v)
 		case *uint64:
 			fValue = float64(*v)
 		case *uint32:
@@ -90,7 +99,8 @@ func (a *Agent) dataJSON() []entities.MetricsJSON {
 	return metrics
 }
 
-func (a *Agent) SendToServer(data []byte) error {
+func (a *Agent) SendToServer(data []byte, secretKey string) error {
+
 	body := bytes.NewReader(data)
 	url := fmt.Sprintf("http://%s/updates/", a.outServer)
 	req, err := http.NewRequest("POST", url, body)
@@ -98,8 +108,10 @@ func (a *Agent) SendToServer(data []byte) error {
 		return err
 	}
 	req.Header.Set("Content-Encoding", "gzip")
-	req.Header.Set("Content-type", "application/json")
-
+	req.Header.Set("Content-Type", "application/json")
+	if secretKey != "" {
+		req.Header.Set("HashSHA256", hashing.GetHash(data, secretKey))
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err

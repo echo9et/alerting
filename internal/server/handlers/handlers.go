@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -119,19 +120,25 @@ func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) 
 	}
 
 	if err = json.Unmarshal(buf.Bytes(), &mj); err != nil {
+		slog.Error("ERROR UNMARSHAL")
 		return err
 	}
 	if err = getMetricsJSON(s, &mj); err != nil {
+		slog.Error("GET DATA")
 		return err
 	}
 
 	out, err := json.Marshal(mj)
 	if err != nil {
+		slog.Error("to MARSHAL")
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(out)
+	// .Println(w.Header())
+
+	fmt.Println("HEADEA", w.Header())
 
 	return nil
 }

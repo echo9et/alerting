@@ -14,6 +14,7 @@ type Config struct {
 	StoreInterval uint64
 	FilenameSave  string
 	RestoreData   bool
+	SecretKey     string
 }
 
 func ParseFlags() (*Config, error) {
@@ -25,6 +26,7 @@ func ParseFlags() (*Config, error) {
 	flag.Uint64Var(&cfg.StoreInterval, "i", 300, "save to file interval")
 	flag.StringVar(&cfg.FilenameSave, "f", "data.json", "filename for save and restore data")
 	flag.BoolVar(&cfg.RestoreData, "r", true, "is restor data from file")
+	flag.StringVar(&cfg.SecretKey, "k", "", "secret key for encryption")
 
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		cfg.AddrServer = envRunAddr
@@ -52,6 +54,10 @@ func ParseFlags() (*Config, error) {
 
 	if envRestoreData := os.Getenv("RESTORE"); envRestoreData != "" {
 		cfg.RestoreData = envRestoreData == "true"
+	}
+
+	if envSecretKey := os.Getenv("KEY"); envSecretKey != "" {
+		cfg.SecretKey = envSecretKey
 	}
 
 	flag.Parse()

@@ -7,6 +7,7 @@ import (
 type Metrics struct {
 	Memory         runtime.MemStats
 	SupportMetrics map[string]interface{}
+	SubMetrics     map[string]interface{}
 	PollCount      int64
 	RandomValue    float64
 }
@@ -15,6 +16,7 @@ func NewMetrics() *Metrics {
 	metrics := Metrics{}
 	metrics.Memory.Alloc = 30
 	metrics.SupportMetrics = make(map[string]interface{})
+	metrics.SubMetrics = make(map[string]interface{})
 	metrics.SupportMetrics["Alloc"] = &metrics.Memory.Alloc
 	metrics.SupportMetrics["BuckHashSys"] = &metrics.Memory.BuckHashSys
 	metrics.SupportMetrics["Frees"] = &metrics.Memory.Frees
@@ -42,6 +44,13 @@ func NewMetrics() *Metrics {
 	metrics.SupportMetrics["StackSys"] = &metrics.Memory.StackSys
 	metrics.SupportMetrics["Sys"] = &metrics.Memory.Sys
 	metrics.SupportMetrics["TotalAlloc"] = &metrics.Memory.TotalAlloc
+	metrics.SupportMetrics["TotalMemory"] = 0
+	metrics.SupportMetrics["FreeMemory"] = 0
+	metrics.SupportMetrics["CPUutilization1"] = 0
+
+	metrics.SubMetrics["TotalMemory"] = 0
+	metrics.SubMetrics["FreeMemory"] = 0
+	metrics.SubMetrics["CPUutilization1"] = 0
 
 	return &metrics
 }
