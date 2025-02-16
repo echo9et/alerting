@@ -13,6 +13,7 @@ type Config struct {
 	PollTimeout   int64
 	ReportTimeout int64
 	SecretKey     string
+	RateLimit     int64
 }
 
 func (cfg Config) isValid() bool {
@@ -30,6 +31,11 @@ func (cfg Config) isValid() bool {
 		fmt.Println("Частота снятия данных должна быть больше 0")
 		return false
 	}
+
+	if cfg.RateLimit < 1 {
+		fmt.Println("Количество одновременно исходящих запросов на сервер должна быть больше 0")
+		return false
+	}
 	return true
 }
 
@@ -39,6 +45,7 @@ func GetConfig() (*Config, bool) {
 	flag.Int64Var(&cfg.PollTimeout, "p", 2, "pool interval")
 	flag.Int64Var(&cfg.ReportTimeout, "r", 10, "report interval")
 	flag.StringVar(&cfg.SecretKey, "k", "", "secret key for encryption")
+	flag.Int64Var(&cfg.RateLimit, "l", 1, "rate limit")
 
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		cfg.AddrServer = envRunAddr
@@ -60,6 +67,13 @@ func GetConfig() (*Config, bool) {
 
 	if envSecretKey := os.Getenv("KEY"); envSecretKey != "" {
 		cfg.SecretKey = envSecretKey
+	}
+
+	if envRateLimit := os.Getenv("RATE_LIMIT"); envRateLimit != "" {
+		value, ok := strconv.ParseInt(envRateLimit, 10, 0)
+		if ok == nil {
+			cfg.RateLimit = value
+		}
 	}
 
 	flag.Parse()

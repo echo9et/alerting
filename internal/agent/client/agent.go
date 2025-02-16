@@ -13,6 +13,7 @@ import (
 	"github.com/echo9et/alerting/internal/agent/metrics"
 	"github.com/echo9et/alerting/internal/entities"
 	"github.com/echo9et/alerting/internal/hashing"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 type Agent struct {
@@ -26,7 +27,7 @@ func NewAgent(addressServer string) *Agent {
 	}
 }
 
-func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration, key string) {
+func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration, key string, rateLimit int64) {
 	runtime.GC()
 	counter := time.Duration(0)
 	for {
@@ -34,7 +35,10 @@ func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Dur
 		a.metrics.PollCount += 1
 		a.metrics.RandomValue = rand.Float64()
 		time.Sleep(reportInterval)
-
+		v, _ := mem.VirtualMemory()
+		a.metrics.SupportMetrics["TotalMemory"] = v.Total
+		a.metrics.SupportMetrics["FreeMemory"] = v.Free
+		a.metrics.SupportMetrics["CPUutilization1"] = runtime.NumCPU()
 		counter += reportInterval
 		if counter >= pollInterval {
 			counter = time.Duration(0)
@@ -63,6 +67,10 @@ func (a *Agent) dataJSON() []entities.MetricsJSON {
 		metric := entities.MetricsJSON{}
 		var fValue float64
 		switch v := value.(type) {
+		case int:
+			fValue = float64(v)
+		case uint64:
+			fValue = float64(v)
 		case *uint64:
 			fValue = float64(*v)
 		case *uint32:

@@ -14,5 +14,5 @@ func main() {
 	a := client.NewAgent(config.AddrServer)
 	r := time.Duration(config.ReportTimeout) * time.Second
 	p := time.Duration(config.PollTimeout) * time.Second
-	a.UpdateMetrics(r, p, config.SecretKey)
+	a.UpdateMetrics(r, p, config.SecretKey, config.RateLimit)
 }
