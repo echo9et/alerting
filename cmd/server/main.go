@@ -7,7 +7,8 @@ import (
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/coreserver"
 	"github.com/echo9et/alerting/internal/server/storage"
-	"golang.org/x/exp/slog"
+
+	"log/slog"
 )
 
 func main() {

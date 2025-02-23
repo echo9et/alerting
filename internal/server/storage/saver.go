@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/echo9et/alerting/internal/entities"
-	"golang.org/x/exp/slog"
+
+	"log/slog"
 )
 
 type Saver struct {

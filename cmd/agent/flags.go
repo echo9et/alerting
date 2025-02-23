@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 type Config struct {
