@@ -9,7 +9,7 @@ import (
 )
 
 type Metricer interface {
-	ToJson() []entities.MetricsJSON
+	ToJSON() []entities.MetricsJSON
 	Update()
 }
 
@@ -62,7 +62,7 @@ func (m *MetricsRuntime) Update() {
 	m.RandomValue = rand.Float64()
 }
 
-func (m *MetricsRuntime) ToJson() []entities.MetricsJSON {
+func (m *MetricsRuntime) ToJSON() []entities.MetricsJSON {
 	metrics := make([]entities.MetricsJSON, 0)
 	for key, value := range m.Storage {
 		metric := entities.MetricsJSON{}
@@ -117,7 +117,7 @@ func (m *MetricsMem) Update() {
 	m.Storage["FreeMemory"] = v.Free
 }
 
-func (m *MetricsMem) ToJson() []entities.MetricsJSON {
+func (m *MetricsMem) ToJSON() []entities.MetricsJSON {
 	metrics := make([]entities.MetricsJSON, 0)
 	for key, value := range m.Storage {
 		metric := entities.MetricsJSON{}

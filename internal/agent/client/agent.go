@@ -92,7 +92,7 @@ func generatorMetric(in chan []entities.MetricsJSON, m metrics.Metricer, reportI
 		counter += reportInterval
 		if counter >= pollInterval {
 			counter = time.Duration(0)
-			in <- m.ToJson()
+			in <- m.ToJSON()
 		}
 	}
 }
