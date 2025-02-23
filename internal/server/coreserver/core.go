@@ -159,19 +159,19 @@ func WriteMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.St
 
 func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
-		fmt.Println("=== Error: WriteMetricsJSONHandle", 405)
+		slog.Error(fmt.Sprintln("=== Error: WriteMetricsJSONHandle", 405))
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
 	if r.Header.Get("Content-Type") != "application/json" {
-		fmt.Println("=== Error: WriteMetricsJSONHandle", 400)
+		slog.Error(fmt.Sprintln("=== Error: WriteMetricsJSONHandle", 400))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if err := handlers.WriteMetricsJSON(w, r, s); err != nil {
-		fmt.Println(" === Error: WriteMetricsJSONHandle", 505)
+		slog.Error(fmt.Sprintln(" === Error: WriteMetricsJSONHandle", 505))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 

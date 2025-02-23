@@ -211,10 +211,9 @@ func (b *Base) requestSaveMerics(mertics []entities.MetricsJSON) error {
 				return err
 			}
 		} else {
-			fmt.Println("Неизвестный тип метрики ", err)
 			return errors.New("Неизвестный тип метрики " + v.ID)
 		}
 	}
-	fmt.Println("All right commit ")
+	slog.Info("All right commit ")
 	return tx.Commit()
 }

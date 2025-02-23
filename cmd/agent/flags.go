@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net"
 	"os"
 	"strconv"
+
+	"golang.org/x/exp/slog"
 )
 
 type Config struct {
@@ -19,21 +20,21 @@ type Config struct {
 func (cfg Config) isValid() bool {
 	_, _, err := net.SplitHostPort(cfg.AddrServer)
 	if err != nil {
-		fmt.Println("Ошибка в передачи пармерта сервера")
+		slog.Error("Ошибка в передачи пармерта сервера")
 		return false
 	}
 	if cfg.PollTimeout < 1 {
-		fmt.Println("Частота отправки данных на сервер должна быть больше 0")
+		slog.Error("Частота отправки данных на сервер должна быть больше 0")
 		return false
 	}
 
 	if cfg.ReportTimeout < 1 {
-		fmt.Println("Частота снятия данных должна быть больше 0")
+		slog.Error("Частота снятия данных должна быть больше 0")
 		return false
 	}
 
 	if cfg.RateLimit < 1 {
-		fmt.Println("Количество одновременно исходящих запросов на сервер должна быть больше 0")
+		slog.Error("Количество одновременно исходящих запросов на сервер должна быть больше 0")
 		return false
 	}
 	return true

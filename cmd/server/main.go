@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/echo9et/alerting/internal/entities"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/coreserver"
 	"github.com/echo9et/alerting/internal/server/storage"
+	"golang.org/x/exp/slog"
 )
 
 func main() {
@@ -19,13 +19,13 @@ func main() {
 
 	var store entities.Storage
 	if cfg.AddrDatabase != "" {
-		fmt.Println("start with postgres")
+		slog.Info("start with postgres")
 		store, err = storage.NewPDatabase(cfg.AddrDatabase)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		fmt.Println("start with mem storage")
+		slog.Info("start with mem storage")
 		store, err = storage.NewSaver(storage.NewMemStore(), cfg.FilenameSave, cfg.RestoreData, time.Duration(cfg.StoreInterval)*time.Second)
 		if err != nil {
 			panic(err)

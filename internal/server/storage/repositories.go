@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/echo9et/alerting/internal/entities"
 )
@@ -93,7 +94,7 @@ func (s *MemStore) SetMetrics(metrics []entities.MetricsJSON) error {
 			s.SetCounter(v.ID, *v.Delta)
 
 		} else {
-			fmt.Println("Unknow Type")
+			slog.Warn("Unknow Type", "type", v.MType)
 		}
 	}
 	return nil
