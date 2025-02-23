@@ -45,7 +45,7 @@ func GetConfig() (*Config, bool) {
 	flag.Int64Var(&cfg.PollTimeout, "p", 2, "pool interval")
 	flag.Int64Var(&cfg.ReportTimeout, "r", 10, "report interval")
 	flag.StringVar(&cfg.SecretKey, "k", "", "secret key for encryption")
-	flag.Int64Var(&cfg.RateLimit, "l", 1, "rate limit")
+	flag.Int64Var(&cfg.RateLimit, "l", 2, "rate limit")
 
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		cfg.AddrServer = envRunAddr

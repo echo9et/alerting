@@ -1,10 +1,12 @@
 package metrics
 
 import (
+	"fmt"
 	"math/rand/v2"
 	"runtime"
 
 	"github.com/echo9et/alerting/internal/entities"
+	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/v4/mem"
 )
 
@@ -102,7 +104,6 @@ func (m *MetricsRuntime) ToJSON() []entities.MetricsJSON {
 
 type MetricsMem struct {
 	Storage map[string]interface{}
-	v       *mem.VirtualMemoryStat
 }
 
 func NewMetricsMem() *MetricsMem {
@@ -115,6 +116,10 @@ func (m *MetricsMem) Update() {
 	v, _ := mem.VirtualMemory()
 	m.Storage["TotalMemory"] = v.Total
 	m.Storage["FreeMemory"] = v.Free
+	c, _ := cpu.Percent(0, true)
+	for i, percent := range c {
+		m.Storage[fmt.Sprintf("CPUutilization%d", i+1)] = percent
+	}
 }
 
 func (m *MetricsMem) ToJSON() []entities.MetricsJSON {
@@ -123,16 +128,10 @@ func (m *MetricsMem) ToJSON() []entities.MetricsJSON {
 		metric := entities.MetricsJSON{}
 		var fValue float64
 		switch v := value.(type) {
-		case int:
+		case float64:
 			fValue = float64(v)
 		case uint64:
 			fValue = float64(v)
-		case *uint64:
-			fValue = float64(*v)
-		case *uint32:
-			fValue = float64(*v)
-		case *float64:
-			fValue = *v
 		}
 		metric.Value = &fValue
 		metric.MType = entities.Gauge

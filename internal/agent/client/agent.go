@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/echo9et/alerting/internal/agent/metrics"
@@ -26,14 +27,20 @@ func NewAgent(addressServer string) *Agent {
 }
 
 func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration, key string, rateLimit int64) {
-	in := make(chan []entities.MetricsJSON)
-	defer close(in)
-	go generatorMetric(in, metrics.NewMetrics(), pollInterval, reportInterval)
-	go generatorMetric(in, metrics.NewMetricsMem(), pollInterval, reportInterval)
-	a.poll(in, key)
+	queueMetrics := make(chan []entities.MetricsJSON)
+	defer close(queueMetrics)
+	go generatorMetric(queueMetrics, metrics.NewMetrics(), pollInterval, reportInterval)
+	go generatorMetric(queueMetrics, metrics.NewMetricsMem(), pollInterval, reportInterval)
+
+	var wg sync.WaitGroup
+	for range rateLimit - 1 {
+		wg.Add(1)
+		go a.poll(queueMetrics, key, &wg)
+	}
+	wg.Wait()
 }
 
-func (a *Agent) poll(in chan []entities.MetricsJSON, secretKey string) {
+func (a *Agent) poll(in chan []entities.MetricsJSON, secretKey string, wg *sync.WaitGroup) {
 	for metric := range in {
 		data, err := json.Marshal(metric)
 		if err != nil {
@@ -45,8 +52,11 @@ func (a *Agent) poll(in chan []entities.MetricsJSON, secretKey string) {
 			slog.Error(fmt.Sprintln(err))
 			return
 		}
-		a.SendToServer(cd, secretKey)
+		entities.Retry(func() error {
+			return a.SendToServer(cd, secretKey)
+		})
 	}
+	wg.Done()
 }
 
 func (a *Agent) SendToServer(data []byte, secretKey string) error {
