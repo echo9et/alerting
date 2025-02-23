@@ -82,7 +82,7 @@ func (b *Base) Ping() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	if err := b.conn.PingContext(ctx); err != nil {
-		slog.Error(" Context False", err)
+		slog.Error(fmt.Sprintln(" Context False", err))
 		return false
 	}
 	return true
@@ -94,7 +94,7 @@ func (b *Base) GetCounter(name string) (string, bool) {
 	err := b.conn.QueryRow(query, name).Scan(&desc)
 
 	if err != nil {
-		fmt.Println("ERROR GetCounter ", name, err)
+		slog.Error(fmt.Sprintln("ERROR GetCounter ", name, err))
 		return "", false
 	}
 
@@ -108,7 +108,7 @@ func (b *Base) SetCounter(name string, iValue int64) {
 		ON CONFLICT (name) 
 		DO UPDATE SET value = metrics_counter.value + EXCLUDED.value;`, name, iValue)
 	if err != nil {
-		slog.Error("SetCounter ", err)
+		slog.Error(fmt.Sprintln("SetCounter ", err))
 	}
 }
 
@@ -151,14 +151,14 @@ func (b *Base) AllMetrics() map[string]string {
 	for rows.Next() {
 		err = rows.Scan(&name, &value)
 		if err != nil {
-			slog.Error("AllMetrics ", err)
+			slog.Error(fmt.Sprintln("AllMetrics ", err))
 			return out
 		}
 		out[name] = value
 	}
 	err = rows.Err()
 	if err != nil {
-		slog.Error("AllMetrics ", err)
+		slog.Error(fmt.Sprintln("AllMetrics ", err))
 	}
 	return out
 }
