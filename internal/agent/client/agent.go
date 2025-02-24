@@ -41,6 +41,7 @@ func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Dur
 }
 
 func (a *Agent) poll(in chan []entities.MetricsJSON, secretKey string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	for metric := range in {
 		data, err := json.Marshal(metric)
 		if err != nil {
@@ -56,7 +57,6 @@ func (a *Agent) poll(in chan []entities.MetricsJSON, secretKey string, wg *sync.
 			return a.SendToServer(cd, secretKey)
 		})
 	}
-	wg.Done()
 }
 
 func (a *Agent) SendToServer(data []byte, secretKey string) error {
