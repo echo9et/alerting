@@ -2,11 +2,13 @@ package main
 
 import (
 	"time"
-	"fmt"
+
 	"github.com/echo9et/alerting/internal/entities"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/coreserver"
 	"github.com/echo9et/alerting/internal/server/storage"
+
+	"log/slog"
 )
 
 func main() {
@@ -18,13 +20,13 @@ func main() {
 
 	var store entities.Storage
 	if cfg.AddrDatabase != "" {
-		fmt.Println("start with postgres")
+		slog.Info("start with postgres")
 		store, err = storage.NewPDatabase(cfg.AddrDatabase)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		fmt.Println("start with mem storage")
+		slog.Info("start with mem storage")
 		store, err = storage.NewSaver(storage.NewMemStore(), cfg.FilenameSave, cfg.RestoreData, time.Duration(cfg.StoreInterval)*time.Second)
 		if err != nil {
 			panic(err)
@@ -33,7 +35,7 @@ func main() {
 
 	logger.Initilization(cfg.LogLevel)
 
-	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store); err != nil {
+	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store, cfg.SecretKey); err != nil {
 		panic(err)
 	}
 

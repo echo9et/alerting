@@ -3,12 +3,13 @@ package storage
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"time"
 
 	"github.com/echo9et/alerting/internal/entities"
+
+	"log/slog"
 )
 
 type Saver struct {
@@ -112,11 +113,10 @@ func (s *Saver) restoreData() error {
 		case entities.Gauge:
 			s.Store.SetGauge(metric.ID, *metric.Value)
 		default:
-			fmt.Println("Не удалось прочитать тип данных при восстановление данных")
+			slog.Warn("Не удалось прочитать тип данных при восстановление данных")
 		}
 	}
 
-	// fmt.Println("READ METRICS", metricsJSON)
 	return nil
 
 }

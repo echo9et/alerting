@@ -5,17 +5,18 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"log/slog"
 	"net/http"
-	"runtime"
+	"sync"
 	"time"
 
 	"github.com/echo9et/alerting/internal/agent/metrics"
 	"github.com/echo9et/alerting/internal/entities"
+	"github.com/echo9et/alerting/internal/hashing"
 )
 
 type Agent struct {
-	metrics   *metrics.Metrics
+	metrics   *metrics.MetricsRuntime
 	outServer string
 }
 
@@ -25,72 +26,41 @@ func NewAgent(addressServer string) *Agent {
 	}
 }
 
-func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration) {
-	runtime.GC()
-	counter := time.Duration(0)
-	for {
-		runtime.ReadMemStats(&a.metrics.Memory)
-		a.metrics.PollCount += 1
-		a.metrics.RandomValue = rand.Float64()
-		time.Sleep(reportInterval)
+func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration, key string, rateLimit int64) {
+	queueMetrics := make(chan []entities.MetricsJSON)
+	defer close(queueMetrics)
+	go generatorMetric(queueMetrics, metrics.NewMetrics(), pollInterval, reportInterval)
+	go generatorMetric(queueMetrics, metrics.NewMetricsMem(), pollInterval, reportInterval)
 
-		counter += reportInterval
-		if counter >= pollInterval {
-			counter = time.Duration(0)
-			a.pollMetrics()
+	var wg sync.WaitGroup
+	for range rateLimit - 1 {
+		wg.Add(1)
+		go a.poll(queueMetrics, key, &wg)
+	}
+	wg.Wait()
+}
+
+func (a *Agent) poll(in chan []entities.MetricsJSON, secretKey string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for metric := range in {
+		data, err := json.Marshal(metric)
+		if err != nil {
+			slog.Error(fmt.Sprintln(err))
+			return
 		}
-	}
-}
-
-func (a *Agent) pollMetrics() error {
-	data, err := json.Marshal(a.dataJSON())
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		return err
-	}
-	cd, err := CompressGzip(data)
-	if err != nil {
-		return err
-	}
-
-	return a.SendToServer(cd)
-}
-
-func (a *Agent) dataJSON() []entities.MetricsJSON {
-	metrics := make([]entities.MetricsJSON, 0)
-	for key, value := range a.metrics.SupportMetrics {
-		metric := entities.MetricsJSON{}
-		var fValue float64
-		switch v := value.(type) {
-		case *uint64:
-			fValue = float64(*v)
-		case *uint32:
-			fValue = float64(*v)
-		case *float64:
-			fValue = *v
+		cd, err := CompressGzip(data)
+		if err != nil {
+			slog.Error(fmt.Sprintln(err))
+			return
 		}
-		metric.Value = &fValue
-		metric.MType = entities.Gauge
-		metric.ID = key
-
-		metrics = append(metrics, metric)
+		entities.Retry(func() error {
+			return a.SendToServer(cd, secretKey)
+		})
 	}
-	metrics = append(metrics, entities.MetricsJSON{
-		ID:    "PollCount",
-		MType: entities.Counter,
-		Delta: &a.metrics.PollCount,
-	})
-
-	metrics = append(metrics, entities.MetricsJSON{
-		ID:    "RandomValue",
-		MType: entities.Gauge,
-		Value: &a.metrics.RandomValue,
-	})
-
-	return metrics
 }
 
-func (a *Agent) SendToServer(data []byte) error {
+func (a *Agent) SendToServer(data []byte, secretKey string) error {
+	slog.Info("SendToServer")
 	body := bytes.NewReader(data)
 	url := fmt.Sprintf("http://%s/updates/", a.outServer)
 	req, err := http.NewRequest("POST", url, body)
@@ -98,8 +68,10 @@ func (a *Agent) SendToServer(data []byte) error {
 		return err
 	}
 	req.Header.Set("Content-Encoding", "gzip")
-	req.Header.Set("Content-type", "application/json")
-
+	req.Header.Set("Content-Type", "application/json")
+	if secretKey != "" {
+		req.Header.Set("HashSHA256", hashing.GetHash(data, secretKey))
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -120,4 +92,17 @@ func CompressGzip(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed compress data: %v", err)
 	}
 	return b.Bytes(), nil
+}
+
+func generatorMetric(in chan []entities.MetricsJSON, m metrics.Metricer, reportInterval time.Duration, pollInterval time.Duration) {
+	counter := time.Duration(0)
+	for {
+		m.Update()
+		time.Sleep(reportInterval)
+		counter += reportInterval
+		if counter >= pollInterval {
+			counter = time.Duration(0)
+			in <- m.ToJSON()
+		}
+	}
 }
