@@ -30,6 +30,7 @@ var supportMetrics = map[string]func(entities.ManagerValues, string, string) err
 	Counter: handlerCounters,
 }
 
+// saveMetricsJSON - запись метрик в хранилище
 func handlerCounters(s entities.ManagerValues, name, sValue string) error {
 	iValue, err := strconv.ParseInt(sValue, 10, 64)
 	if err != nil {
@@ -39,6 +40,7 @@ func handlerCounters(s entities.ManagerValues, name, sValue string) error {
 	return nil
 }
 
+// saveMetricsJSON - запись метрик в хранилище
 func handlerGauge(s entities.ManagerValues, name, sValue string) error {
 	fValue, err := strconv.ParseFloat(sValue, 64)
 	if err != nil {
@@ -48,6 +50,7 @@ func handlerGauge(s entities.ManagerValues, name, sValue string) error {
 	return nil
 }
 
+// ReadMetric - Запись метрики в хранилище
 func WriteMetric(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	handlerMetric, ok := supportMetrics[chi.URLParam(r, "type")]
 	if !ok {
@@ -65,6 +68,7 @@ func WriteMetric(w http.ResponseWriter, r *http.Request, s entities.Storage) err
 	return nil
 }
 
+// WriteMetricJSON - Запись метрики в хранилище, передается в формате JSON
 func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	var mj entities.MetricsJSON
 	var buf bytes.Buffer
@@ -92,6 +96,7 @@ func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage)
 	return nil
 }
 
+// WriteMetricSJSON - Запись метрик в хранилище, передается в формате JSON
 func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	var metricsJSON = make([]entities.MetricsJSON, 0)
 	var buf bytes.Buffer
@@ -107,6 +112,7 @@ func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s entities.Storage
 	return s.SetMetrics(metricsJSON)
 }
 
+// ReadMetricJSON - Чтение метрики из хранилища, отдаются в формате JSON
 func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	var mj entities.MetricsJSON
 	var buf bytes.Buffer
@@ -136,6 +142,7 @@ func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) 
 	return nil
 }
 
+// ReadMetricJSON - Чтение метрик из хранилища, отдаются в формате JSON
 func getMetricsJSON(s entities.Storage, mj *entities.MetricsJSON) error {
 	switch mj.MType {
 	case Counter:

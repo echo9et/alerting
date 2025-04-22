@@ -20,12 +20,14 @@ type Agent struct {
 	outServer string
 }
 
+// NewAgent конструктор для создания объекта агента
 func NewAgent(addressServer string) *Agent {
 	return &Agent{metrics: metrics.NewMetrics(),
 		outServer: addressServer,
 	}
 }
 
+// UpdateMetrics запуск сбора метрик и отправки их на сервер.
 func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration, key string, rateLimit int64) {
 	queueMetrics := make(chan []entities.MetricsJSON)
 	defer close(queueMetrics)
@@ -40,6 +42,7 @@ func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Dur
 	wg.Wait()
 }
 
+// poll отправка метрик на сервер.
 func (a *Agent) poll(in chan []entities.MetricsJSON, secretKey string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for metric := range in {
@@ -59,6 +62,7 @@ func (a *Agent) poll(in chan []entities.MetricsJSON, secretKey string, wg *sync.
 	}
 }
 
+// SendToServer отправка метрик на сервер.
 func (a *Agent) SendToServer(data []byte, secretKey string) error {
 	slog.Info("SendToServer")
 	body := bytes.NewReader(data)
@@ -80,6 +84,7 @@ func (a *Agent) SendToServer(data []byte, secretKey string) error {
 	return nil
 }
 
+// CompressGzip сжатие метрик перед отправкой на сервер.
 func CompressGzip(data []byte) ([]byte, error) {
 	var b bytes.Buffer
 	gz := gzip.NewWriter(&b)
@@ -94,6 +99,7 @@ func CompressGzip(data []byte) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// generatorMetric сбор метрик с заданным интервалом времени.
 func generatorMetric(in chan []entities.MetricsJSON, m metrics.Metricer, reportInterval time.Duration, pollInterval time.Duration) {
 	counter := time.Duration(0)
 	for {

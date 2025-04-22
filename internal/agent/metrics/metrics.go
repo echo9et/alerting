@@ -54,6 +54,7 @@ type MetricsRuntime struct {
 	data   data
 }
 
+// NewMetrics возвращает структуру с метриками рантайма приложения
 func NewMetrics() *MetricsRuntime {
 	runtime.GC()
 	return &MetricsRuntime{
@@ -103,6 +104,7 @@ type MetricsMem struct {
 	data data
 }
 
+// NewMetricsMem возвращает структуру для сбора информации о памяти.
 func NewMetricsMem() *MetricsMem {
 	return &MetricsMem{
 		data: newData(),

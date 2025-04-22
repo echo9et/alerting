@@ -27,6 +27,7 @@ func Initilization(level string) error {
 	return nil
 }
 
+// RequestLogger middleware для логикровния запросов
 func RequestLogger(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()

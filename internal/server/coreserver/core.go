@@ -15,6 +15,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Добавляет к обработчику протоколирование и сжатие в формате gzip.
+// Если указан секретный ключ, оно также добавляет промежуточное программное обеспечение для хэширования.
 func middleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 	if secretKey != "" {
 		return logger.RequestLogger(
@@ -25,6 +27,7 @@ func middleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 		compgzip.GzipMiddleware(h))
 }
 
+// Добавляет к обработчику протоколирование и сжатие в формате gzip.
 func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -50,6 +53,7 @@ func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 	})
 }
 
+// Возвращает маршрутизатор сервера.
 func GetRouter(addrDatabase string, storage entities.Storage, secretKey string) *chi.Mux {
 	router := chi.NewRouter()
 
@@ -84,10 +88,12 @@ func GetRouter(addrDatabase string, storage entities.Storage, secretKey string) 
 	return router
 }
 
+// Запуск сервера.
 func Run(addr, addrDatabase string, storage entities.Storage, secretKey string) error {
 	return http.ListenAndServe(addr, GetRouter(addrDatabase, storage, secretKey))
 }
 
+// Возвращает значения метрик по типу и имени.
 func metricHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -113,6 +119,7 @@ func metricHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	}
 }
 
+// Возвращает все метрики.
 func metricsHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -130,6 +137,7 @@ func metricsHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Обновляет метрику.
 func setMetricHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -141,6 +149,7 @@ func setMetricHandle(w http.ResponseWriter, r *http.Request, s entities.Storage)
 	}
 }
 
+// Записывает метрику в хранилище.
 func WriteMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -157,6 +166,7 @@ func WriteMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.St
 	}
 }
 
+// Записывает метрики в хранилище.
 func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
 		slog.Error(fmt.Sprintln("=== Error: WriteMetricsJSONHandle", 405))
@@ -177,6 +187,7 @@ func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s entities.S
 
 }
 
+// Считывает метрику из хранилища.
 func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -193,6 +204,7 @@ func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Sto
 	}
 }
 
+// Проверяет доступность хранилища.
 func PingDatabase(w http.ResponseWriter, r *http.Request, addr string, s entities.Storage) {
 	if !s.Ping() {
 		w.WriteHeader(http.StatusInternalServerError)
