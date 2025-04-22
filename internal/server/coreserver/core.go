@@ -176,6 +176,7 @@ func WriteMetricsJSONHandle(w http.ResponseWriter, r *http.Request, s entities.S
 	}
 
 }
+
 func ReadMetricJSONHandle(w http.ResponseWriter, r *http.Request, s entities.Storage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)

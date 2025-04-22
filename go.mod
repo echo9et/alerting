@@ -9,6 +9,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/shirou/gopsutil/v4 v4.25.1
 	github.com/stretchr/testify v1.10.0
+	go.uber.org/mock v0.5.1
 	go.uber.org/zap v1.27.0
 )
 

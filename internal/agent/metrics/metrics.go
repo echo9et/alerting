@@ -64,12 +64,9 @@ func NewMetrics() *MetricsRuntime {
 func (m *MetricsRuntime) Update() {
 	runtime.ReadMemStats(&m.Memory)
 	m.data.Counters["PollCount"] += 1
-	m.data.Gauges["RandomValue"] = rand.Float64()
-
 	m.data.Counters["Alloc"] = m.Memory.Alloc
 	m.data.Counters["BuckHashSys"] = m.Memory.BuckHashSys
 	m.data.Counters["Frees"] = m.Memory.Frees
-	m.data.Gauges["GCCPUFraction"] = m.Memory.GCCPUFraction
 	m.data.Counters["GCSys"] = m.Memory.GCSys
 	m.data.Counters["HeapAlloc"] = m.Memory.HeapAlloc
 	m.data.Counters["HeapIdle"] = m.Memory.HeapIdle
@@ -93,6 +90,9 @@ func (m *MetricsRuntime) Update() {
 	m.data.Counters["StackSys"] = m.Memory.StackSys
 	m.data.Counters["Sys"] = m.Memory.Sys
 	m.data.Counters["TotalAlloc"] = m.Memory.TotalAlloc
+
+	m.data.Gauges["RandomValue"] = rand.Float64()
+	m.data.Gauges["GCCPUFraction"] = m.Memory.GCCPUFraction
 }
 
 func (m *MetricsRuntime) ToJSON() []entities.MetricsJSON {
