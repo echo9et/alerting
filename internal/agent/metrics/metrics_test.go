@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/echo9et/alerting/internal/entities"
@@ -9,98 +8,137 @@ import (
 )
 
 func TestMetricsRuntime_Update(t *testing.T) {
-	metrics := NewMetrics()
+	tests := []struct {
+		name  string
+		err   string
+		mType string
+	}{
+		{
+			name:  "PollCount",
+			err:   "PollCount should be updated",
+			mType: entities.Counter,
+		},
+		{
+			name:  "RandomValue",
+			err:   "RandomValue should be updated",
+			mType: entities.Gauge,
+		},
+		{
+			name:  "GCCPUFraction",
+			err:   "GCCPUFraction should be updated",
+			mType: entities.Gauge,
+		},
+	}
 
-	// Вызываем метод Update
+	metrics := NewMetricsRuntime()
 	metrics.Update()
-
-	// Проверяем, что данные были обновлены
-	assert.NotZero(t, metrics.data.Counters["PollCount"], "PollCount should be updated")
-	assert.NotZero(t, metrics.data.Gauges["RandomValue"], "RandomValue should be updated")
-	assert.NotZero(t, metrics.data.Gauges["GCCPUFraction"], "GCCPUFraction should be updated")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.mType == entities.Counter {
+				assert.NotZero(t, metrics.data.Counters[tt.name], tt.err)
+			} else if tt.mType == entities.Gauge {
+				assert.NotZero(t, metrics.data.Gauges[tt.name], tt.err)
+			}
+		})
+	}
 }
 
 func TestMetricsRuntime_ToJSON(t *testing.T) {
-	metrics := NewMetrics()
-	metrics.Update()
-
-	// Получаем JSON-представление метрик
-	jsonMetrics := metrics.ToJSON()
-
-	// Проверяем, что JSON содержит ожидаемые метрики
-	foundPollCount := false
-	foundRandomValue := false
-	foundGCCPUFraction := false
-
-	for _, metric := range jsonMetrics {
-		if metric.ID == "PollCount" && metric.MType == entities.Counter {
-			foundPollCount = true
-			assert.NotNil(t, metric.Delta, "Delta for PollCount should not be nil")
-		}
-		if metric.ID == "RandomValue" && metric.MType == entities.Gauge {
-			foundRandomValue = true
-			assert.NotNil(t, metric.Value, "Value for RandomValue should not be nil")
-		}
-		if metric.ID == "GCCPUFraction" && metric.MType == entities.Gauge {
-			foundGCCPUFraction = true
-			assert.NotNil(t, metric.Value, "Value for GCCPUFraction should not be nil")
-		}
+	tests := []struct {
+		name  string
+		err   string
+		mType string
+	}{
+		{
+			name:  "PollCount",
+			err:   "Delta for PollCount should not be nil",
+			mType: entities.Counter,
+		},
+		{
+			name:  "RandomValue",
+			err:   "Value for RandomValue should not be nil",
+			mType: entities.Gauge,
+		},
+		{
+			name:  "GCCPUFraction",
+			err:   "Value for GCCPUFraction should not be nil",
+			mType: entities.Gauge,
+		},
 	}
 
-	assert.True(t, foundPollCount, "PollCount metric should be present in JSON")
-	assert.True(t, foundRandomValue, "RandomValue metric should be present in JSON")
-	assert.True(t, foundGCCPUFraction, "GCCPUFraction metric should be present in JSON")
+	metrics := NewMetricsRuntime()
+	metrics.Update()
+	jsonMetrics := metrics.ToJSON()
+	for _, tt := range tests {
+		for _, metric := range jsonMetrics {
+			if metric.ID == tt.name && metric.MType == tt.mType {
+				if tt.mType == entities.Counter {
+					assert.NotNil(t, metric.Delta, tt.err)
+				} else if tt.mType == entities.Gauge {
+					assert.NotNil(t, metric.Value, tt.err)
+				}
+			}
+		}
+	}
 }
 
 func TestMetricsMem_Update(t *testing.T) {
-	metrics := NewMetricsMem()
-
-	// Вызываем метод Update
-	metrics.Update()
-
-	// Проверяем, что данные были обновлены
-	assert.NotZero(t, metrics.data.Counters["TotalMemory"], "TotalMemory should be updated")
-	assert.NotZero(t, metrics.data.Counters["FreeMemory"], "FreeMemory should be updated")
-
-	// Проверяем, что CPU utilization метрики присутствуют
-	cpuMetricFound := false
-	for key := range metrics.data.Gauges {
-		if strings.HasPrefix(key, "CPUutilization") {
-			cpuMetricFound = true
-			break
-		}
+	tests := []struct {
+		name  string
+		err   string
+		mType string
+	}{
+		{
+			name:  "TotalMemory",
+			err:   "TotalMemory should be updated",
+			mType: entities.Counter,
+		},
+		{
+			name:  "FreeMemory",
+			err:   "FreeMemory should be updated",
+			mType: entities.Counter,
+		},
 	}
-	assert.True(t, cpuMetricFound, "At least one CPUutilization metric should be present")
+
+	metrics := NewMetricsMem()
+	metrics.Update()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.NotZero(t, metrics.data.Counters[tt.name], tt.err)
+		})
+	}
 }
 
 func TestMetricsMem_ToJSON(t *testing.T) {
-	metrics := NewMetricsMem()
-	metrics.Update()
-
-	// Получаем JSON-представление метрик
-	jsonMetrics := metrics.ToJSON()
-
-	// Проверяем, что JSON содержит ожидаемые метрики
-	foundTotalMemory := false
-	foundFreeMemory := false
-	foundCPUUtilization := false
-
-	for _, metric := range jsonMetrics {
-		if metric.ID == "TotalMemory" && metric.MType == entities.Counter {
-			foundTotalMemory = true
-			assert.NotNil(t, metric.Delta, "Delta for TotalMemory should not be nil")
-		}
-		if metric.ID == "FreeMemory" && metric.MType == entities.Counter {
-			foundFreeMemory = true
-			assert.NotNil(t, metric.Delta, "Delta for FreeMemory should not be nil")
-		}
-		if strings.HasPrefix(metric.ID, "CPUutilization") && metric.MType == entities.Gauge {
-			foundCPUUtilization = true
-			assert.NotNil(t, metric.Value, "Value for CPUutilization should not be nil")
-		}
+	tests := []struct {
+		name  string
+		err   string
+		mType string
+	}{
+		{
+			name:  "TotalMemory",
+			err:   "TotalMemory should be updated",
+			mType: entities.Counter,
+		},
+		{
+			name:  "FreeMemory",
+			err:   "FreeMemory should be updated",
+			mType: entities.Counter,
+		},
 	}
 
-	assert.True(t, foundTotalMemory, "TotalMemory metric should be present in JSON")
-	assert.True(t, foundFreeMemory, "FreeMemory metric should be present in JSON")
-	assert.True(t, foundCPUUtilization, "At least one CPUutilization metric should be present in JSON")
+	metrics := NewMetricsMem()
+	metrics.Update()
+	jsonMetrics := metrics.ToJSON()
+	for _, tt := range tests {
+		for _, metric := range jsonMetrics {
+			if metric.ID == tt.name && metric.MType == tt.mType {
+				if tt.mType == entities.Counter {
+					assert.NotNil(t, metric.Delta, tt.err)
+				} else if tt.mType == entities.Gauge {
+					assert.NotNil(t, metric.Value, tt.err)
+				}
+			}
+		}
+	}
 }

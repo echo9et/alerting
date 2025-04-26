@@ -15,16 +15,32 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// applyGzipMiddleware применяет GzipMiddleware к обработчику.
+func applyGzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
+	return compgzip.GzipMiddleware(h)
+}
+
+// applyHashMiddleware применяет HashMiddleware к обработчику, если secretKey указан.
+func applyHashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
+	if secretKey != "" {
+		return HashMiddleware(h, secretKey)
+	}
+	return h
+}
+
+// applyRequestLogger применяет RequestLogger к обработчику.
+func applyRequestLogger(h http.HandlerFunc) http.HandlerFunc {
+	return logger.RequestLogger(h)
+}
+
 // Добавляет к обработчику протоколирование и сжатие в формате gzip.
 // Если указан секретный ключ, оно также добавляет промежуточное программное обеспечение для хэширования.
 func middleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
-	if secretKey != "" {
-		return logger.RequestLogger(
-			HashMiddleware(
-				compgzip.GzipMiddleware(h), secretKey))
-	}
-	return logger.RequestLogger(
-		compgzip.GzipMiddleware(h))
+	h = applyRequestLogger(h)
+	h = applyHashMiddleware(h, secretKey)
+	h = applyGzipMiddleware(h)
+
+	return h
 }
 
 // Добавляет к обработчику протоколирование и сжатие в формате gzip.
