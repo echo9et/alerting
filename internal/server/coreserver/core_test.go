@@ -182,6 +182,7 @@ func TestApplyGzipMiddleware(t *testing.T) {
 
 	rec = httptest.NewRecorder()
 	resp = rec.Result()
+	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Empty(t, rec.Header().Get("Content-Encoding"))
 }
