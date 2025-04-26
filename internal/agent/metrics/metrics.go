@@ -42,11 +42,10 @@ func (d *data) toJSON() []entities.MetricsJSON {
 }
 
 func newData() data {
-	data := data{
+	return data{
 		Counters: make(map[string]uint64),
 		Gauges:   make(map[string]float64),
 	}
-	return data
 }
 
 type MetricsRuntime struct {
