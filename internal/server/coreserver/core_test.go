@@ -181,7 +181,8 @@ func TestApplyGzipMiddleware(t *testing.T) {
 	middlewareHandler.ServeHTTP(recNoGzip, reqNoGzip)
 
 	rec = httptest.NewRecorder()
-	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	resp = rec.Result()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Empty(t, rec.Header().Get("Content-Encoding"))
 }
 
