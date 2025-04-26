@@ -132,9 +132,9 @@ func TestApplyRequestLogger(t *testing.T) {
 }
 
 func TestApplyHashMiddleware_NoSecretKey(t *testing.T) {
-	text_response := "test response"
+	textResponse := "test response"
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(text_response))
+		w.Write([]byte(textResponse))
 	}
 	httpHandler := http.HandlerFunc(handler)
 
@@ -144,9 +144,16 @@ func TestApplyHashMiddleware_NoSecretKey(t *testing.T) {
 	rec := httptest.NewRecorder()
 	middlewareHandler.ServeHTTP(rec, req)
 
-	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
-	assert.Equal(t, text_response, rec.Body.String())
-	assert.Empty(t, rec.Result().Header.Get("Hashsha256"))
+	resp := rec.Result()
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		assert.Error(t, err)
+	}
+	answer := string(respBody)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, textResponse, answer)
+	assert.Empty(t, resp.Header.Get("Hashsha256"))
 }
 
 func TestApplyGzipMiddleware(t *testing.T) {
@@ -163,7 +170,9 @@ func TestApplyGzipMiddleware(t *testing.T) {
 	rec := httptest.NewRecorder()
 	middlewareHandler.ServeHTTP(rec, req)
 
-	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	resp := rec.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, rec.Header().Get("Content-Encoding"), "gzip")
 
 	// запрос без сжатия
@@ -177,9 +186,9 @@ func TestApplyGzipMiddleware(t *testing.T) {
 }
 
 func TestApplyHashMiddleware(t *testing.T) {
-	text_response := "test response"
+	textResponse := "test response"
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(text_response))
+		w.Write([]byte(textResponse))
 	}
 	httpHandler := http.HandlerFunc(handler)
 
@@ -190,7 +199,9 @@ func TestApplyHashMiddleware(t *testing.T) {
 	rec := httptest.NewRecorder()
 	middlewareHandler.ServeHTTP(rec, req)
 
-	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
-	assert.Equal(t, text_response, rec.Body.String())
-	assert.Equal(t, rec.Result().Header.Get("Hashsha256"), "ebf31a7d817d2091f7238be75431e05dd831ceaa349253b7eb2cd6c71ecbae65")
+	resp := rec.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, textResponse, rec.Body.String())
+	assert.Equal(t, resp.Header.Get("Hashsha256"), "ebf31a7d817d2091f7238be75431e05dd831ceaa349253b7eb2cd6c71ecbae65")
 }
