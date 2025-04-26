@@ -54,7 +54,7 @@ type MetricsRuntime struct {
 }
 
 // NewMetrics возвращает структуру с метриками рантайма приложения
-func NewMetrics() *MetricsRuntime {
+func NewMetricsRuntime() *MetricsRuntime {
 	runtime.GC()
 	return &MetricsRuntime{
 		data: newData(),
