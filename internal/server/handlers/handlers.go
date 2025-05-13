@@ -50,7 +50,7 @@ func handlerGauge(s entities.ManagerValues, name, sValue string) error {
 	return nil
 }
 
-// ReadMetric - Запись метрики в хранилище
+// ReadMetric запись одной метрики в хранилище
 func WriteMetric(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	handlerMetric, ok := supportMetrics[chi.URLParam(r, "type")]
 	if !ok {
@@ -68,7 +68,7 @@ func WriteMetric(w http.ResponseWriter, r *http.Request, s entities.Storage) err
 	return nil
 }
 
-// WriteMetricJSON - Запись метрики в хранилище, передается в формате JSON
+// WriteMetricJSON запись одной метрики в формате JSON
 func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	var mj entities.MetricsJSON
 	var buf bytes.Buffer
@@ -96,7 +96,7 @@ func WriteMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage)
 	return nil
 }
 
-// WriteMetricSJSON - Запись метрик в хранилище, передается в формате JSON
+// WriteMetricSJSON запись всех метрик переднных в формате JSON
 func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	var metricsJSON = make([]entities.MetricsJSON, 0)
 	var buf bytes.Buffer
@@ -112,7 +112,7 @@ func WriteMetricsJSON(w http.ResponseWriter, r *http.Request, s entities.Storage
 	return s.SetMetrics(metricsJSON)
 }
 
-// ReadMetricJSON - Чтение метрики из хранилища, отдаются в формате JSON
+// ReadMetricJSON чтение одной метрики из хранилища, отдаются в формате JSON
 func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	var mj entities.MetricsJSON
 	var buf bytes.Buffer
@@ -142,7 +142,7 @@ func ReadMetricJSON(w http.ResponseWriter, r *http.Request, s entities.Storage) 
 	return nil
 }
 
-// ReadMetricJSON - Чтение метрик из хранилища, отдаются в формате JSON
+// ReadMetricJSON получение всех метрик из хранилища, отдаются в формате JSON
 func getMetricsJSON(s entities.Storage, mj *entities.MetricsJSON) error {
 	switch mj.MType {
 	case Counter:
@@ -164,6 +164,7 @@ func getMetricsJSON(s entities.Storage, mj *entities.MetricsJSON) error {
 	return nil
 }
 
+// saveMetricsJSON запись одной метрики в хранилище
 func saveMetricsJSON(s entities.Storage, mj entities.MetricsJSON) error {
 	switch mj.MType {
 	case Counter:

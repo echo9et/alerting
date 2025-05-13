@@ -22,7 +22,7 @@ type Agent struct {
 
 // NewAgent конструктор для создания объекта агента
 func NewAgent(addressServer string) *Agent {
-	return &Agent{metrics: metrics.NewMetrics(),
+	return &Agent{metrics: metrics.NewMetricsRuntime(),
 		outServer: addressServer,
 	}
 }
@@ -31,7 +31,7 @@ func NewAgent(addressServer string) *Agent {
 func (a Agent) UpdateMetrics(reportInterval time.Duration, pollInterval time.Duration, key string, rateLimit int64) {
 	queueMetrics := make(chan []entities.MetricsJSON)
 	defer close(queueMetrics)
-	go generatorMetric(queueMetrics, metrics.NewMetrics(), pollInterval, reportInterval)
+	go generatorMetric(queueMetrics, metrics.NewMetricsRuntime(), pollInterval, reportInterval)
 	go generatorMetric(queueMetrics, metrics.NewMetricsMem(), pollInterval, reportInterval)
 
 	var wg sync.WaitGroup
