@@ -15,6 +15,7 @@ type Config struct {
 	FilenameSave  string
 	RestoreData   bool
 	SecretKey     string
+	CryptoKey     string
 }
 
 func ParseFlags() (*Config, error) {
@@ -27,6 +28,7 @@ func ParseFlags() (*Config, error) {
 	flag.StringVar(&cfg.FilenameSave, "f", "data.json", "filename for save and restore data")
 	flag.BoolVar(&cfg.RestoreData, "r", true, "is restor data from file")
 	flag.StringVar(&cfg.SecretKey, "k", "", "secret key for encryption")
+	flag.StringVar(&cfg.CryptoKey, "crypto-key", "", "privat key")
 
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		cfg.AddrServer = envRunAddr
@@ -58,6 +60,10 @@ func ParseFlags() (*Config, error) {
 
 	if envSecretKey := os.Getenv("KEY"); envSecretKey != "" {
 		cfg.SecretKey = envSecretKey
+	}
+
+	if envCryptoKey := os.Getenv("CRYPTO-KEY"); envCryptoKey != "" {
+		cfg.CryptoKey = envCryptoKey
 	}
 
 	flag.Parse()

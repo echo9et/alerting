@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"time"
 
@@ -47,7 +48,15 @@ func main() {
 
 	logger.Initilization(cfg.LogLevel)
 
-	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store, cfg.SecretKey); err != nil {
+	var privateKey *rsa.PrivateKey
+	if cfg.CryptoKey != "" {
+		privateKey, err = entities.GetPrivateKey(cfg.CryptoKey)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store, cfg.SecretKey, privateKey); err != nil {
 		panic(err)
 	}
 
