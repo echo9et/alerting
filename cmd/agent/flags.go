@@ -15,6 +15,7 @@ type Config struct {
 	ReportTimeout int64
 	SecretKey     string
 	RateLimit     int64
+	CryptoKey     string
 }
 
 func (cfg Config) isValid() bool {
@@ -47,6 +48,7 @@ func GetConfig() (*Config, bool) {
 	flag.Int64Var(&cfg.ReportTimeout, "r", 10, "report interval")
 	flag.StringVar(&cfg.SecretKey, "k", "", "secret key for encryption")
 	flag.Int64Var(&cfg.RateLimit, "l", 2, "rate limit")
+	flag.StringVar(&cfg.CryptoKey, "crypto-key", "", "public key")
 
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		cfg.AddrServer = envRunAddr
@@ -75,6 +77,10 @@ func GetConfig() (*Config, bool) {
 		if ok == nil {
 			cfg.RateLimit = value
 		}
+	}
+
+	if envCryptoKey := os.Getenv("CRYPTO-KEY"); envCryptoKey != "" {
+		cfg.CryptoKey = envCryptoKey
 	}
 
 	flag.Parse()
