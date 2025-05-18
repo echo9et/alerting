@@ -13,7 +13,7 @@ import (
 	"log/slog"
 )
 
-// Испоользуй флаги сборки
+// Используй флаги сборки
 // go build -ldflags "-X main.buildVersion=1.0.0"
 var (
 	buildVersion string = "N/A"

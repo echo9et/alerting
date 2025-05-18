@@ -50,7 +50,7 @@ func handlerGauge(s entities.ManagerValues, name, sValue string) error {
 	return nil
 }
 
-// ReadMetric запись одной метрики в хранилище
+// WriteMetric запись одной метрики в хранилище
 func WriteMetric(w http.ResponseWriter, r *http.Request, s entities.Storage) error {
 	handlerMetric, ok := supportMetrics[chi.URLParam(r, "type")]
 	if !ok {
