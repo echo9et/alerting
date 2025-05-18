@@ -2,6 +2,7 @@ package coreserver
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -9,6 +10,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
 
 	"github.com/echo9et/alerting/internal/compgzip"
 	"github.com/echo9et/alerting/internal/entities"
@@ -116,7 +119,25 @@ func GetRouter(addrDatabase string, storage entities.Storage, secretKey string, 
 
 // Запуск сервера.
 func Run(addr, addrDatabase string, storage entities.Storage, secretKey string, privateKey *rsa.PrivateKey) error {
-	return http.ListenAndServe(addr, GetRouter(addrDatabase, storage, secretKey, privateKey))
+	var server = http.Server{Addr: addr, Handler: GetRouter(addrDatabase, storage, secretKey, privateKey)}
+	idleConnsClosed := make(chan struct{})
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt)
+
+	go func() {
+		<-sigint
+		if err := server.Shutdown(context.Background()); err != nil {
+			slog.Error(fmt.Sprintf("HTTP server Shutdown: %v", err))
+		}
+		close(idleConnsClosed)
+	}()
+
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		slog.Error(fmt.Sprintf("server ListenAndServe:%v", err))
+		return err
+	}
+	slog.Info("Server Shutdown")
+	return nil
 }
 
 // Возвращает значения метрик по типу и имени.
