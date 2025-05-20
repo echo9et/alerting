@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 	"log/slog"
 )
 
-// Испоользуй флаги сборки
+// Используй флаги сборки
 // go build -ldflags "-X main.buildVersion=1.0.0"
 var (
 	buildVersion string = "N/A"
@@ -47,7 +48,15 @@ func main() {
 
 	logger.Initilization(cfg.LogLevel)
 
-	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store, cfg.SecretKey); err != nil {
+	var privateKey *rsa.PrivateKey
+	if cfg.CryptoKey != "" {
+		privateKey, err = entities.GetPrivateKey(cfg.CryptoKey)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store, cfg.SecretKey, privateKey); err != nil {
 		panic(err)
 	}
 

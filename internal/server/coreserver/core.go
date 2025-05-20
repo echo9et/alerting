@@ -2,10 +2,16 @@ package coreserver
 
 import (
 	"bytes"
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
 
 	"github.com/echo9et/alerting/internal/compgzip"
 	"github.com/echo9et/alerting/internal/entities"
@@ -16,6 +22,13 @@ import (
 )
 
 // applyGzipMiddleware применяет GzipMiddleware к обработчику.
+func applyDecryt(h http.HandlerFunc, privateKey *rsa.PrivateKey) http.HandlerFunc {
+	if privateKey != nil {
+		return DecryptMiddleware(h, privateKey)
+	}
+	return h
+}
+
 func applyGzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 	return compgzip.GzipMiddleware(h)
 }
@@ -35,7 +48,8 @@ func applyRequestLogger(h http.HandlerFunc) http.HandlerFunc {
 
 // Добавляет к обработчику протоколирование и сжатие в формате gzip.
 // Если указан секретный ключ, оно также добавляет промежуточное программное обеспечение для хэширования.
-func middleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
+func middleware(h http.HandlerFunc, secretKey string, privateKey *rsa.PrivateKey) http.HandlerFunc {
+	h = applyDecryt(h, privateKey)
 	h = applyRequestLogger(h)
 	h = applyHashMiddleware(h, secretKey)
 	h = applyGzipMiddleware(h)
@@ -70,43 +84,60 @@ func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 }
 
 // Возвращает маршрутизатор сервера.
-func GetRouter(addrDatabase string, storage entities.Storage, secretKey string) *chi.Mux {
+func GetRouter(addrDatabase string, storage entities.Storage, secretKey string, privateKey *rsa.PrivateKey) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Get("/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricsHandle(w, r, storage)
-	}, secretKey))
+	}, secretKey, privateKey))
 
 	router.Post("/update/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricJSONHandle(w, r, storage)
-	}, secretKey))
+	}, secretKey, privateKey))
 
 	router.Post("/updates/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricsJSONHandle(w, r, storage)
-	}, secretKey))
+	}, secretKey, privateKey))
 
-	router.Post("/update/{type}/{name}/{value}", middleware(func(w http.ResponseWriter, r *http.Request) {
+	router.Post("/update/{type}/{n, privateKey)ame}/{value}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		setMetricHandle(w, r, storage)
-	}, secretKey))
+	}, secretKey, privateKey))
 
 	router.Post("/value/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		ReadMetricJSONHandle(w, r, storage)
-	}, secretKey))
+	}, secretKey, privateKey))
 
 	router.Get("/value/{type}/{name}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
-	}, secretKey))
+	}, secretKey, privateKey))
 
 	router.Get("/ping", middleware(func(w http.ResponseWriter, r *http.Request) {
 		PingDatabase(w, r, addrDatabase, storage)
-	}, secretKey))
-
+	}, secretKey, privateKey))
 	return router
 }
 
 // Запуск сервера.
-func Run(addr, addrDatabase string, storage entities.Storage, secretKey string) error {
-	return http.ListenAndServe(addr, GetRouter(addrDatabase, storage, secretKey))
+func Run(addr, addrDatabase string, storage entities.Storage, secretKey string, privateKey *rsa.PrivateKey) error {
+	var server = http.Server{Addr: addr, Handler: GetRouter(addrDatabase, storage, secretKey, privateKey)}
+	idleConnsClosed := make(chan struct{})
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt)
+
+	go func() {
+		<-sigint
+		if err := server.Shutdown(context.Background()); err != nil {
+			slog.Error(fmt.Sprintf("HTTP server Shutdown: %v", err))
+		}
+		close(idleConnsClosed)
+	}()
+
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		slog.Error(fmt.Sprintf("server ListenAndServe:%v", err))
+		return err
+	}
+	slog.Info("Server Shutdown")
+	return nil
 }
 
 // Возвращает значения метрик по типу и имени.
@@ -230,4 +261,25 @@ func PingDatabase(w http.ResponseWriter, r *http.Request, addr string, s entitie
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+func DecryptMiddleware(h http.HandlerFunc, privateKey *rsa.PrivateKey) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data, err := io.ReadAll(r.Body)
+		if err != nil {
+			slog.Error("Ошибка при чтение информации из запроса %s", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+		decrypted, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, data, nil)
+		if err != nil {
+			slog.Error("Ошибка при дешифрование информации %s", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		r.Body = io.NopCloser(bytes.NewReader(decrypted))
+		h.ServeHTTP(w, r)
+	})
 }

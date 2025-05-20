@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"net"
 	"os"
@@ -10,17 +11,18 @@ import (
 )
 
 type Config struct {
-	AddrServer    string
-	PollTimeout   int64
-	ReportTimeout int64
-	SecretKey     string
-	RateLimit     int64
+	AddrServer    string `json:"address,omitempty"`
+	PollTimeout   int64  `json:"poll_interval,omitempty"`
+	ReportTimeout int64  `json:"report_interval,omitempty"`
+	SecretKey     string `json:"key,omitempty"`
+	RateLimit     int64  `json:"rate_limit,omitempty"`
+	CryptoKey     string `json:"crypto_key,omitempty"`
 }
 
 func (cfg Config) isValid() bool {
 	_, _, err := net.SplitHostPort(cfg.AddrServer)
 	if err != nil {
-		slog.Error("Ошибка в передачи пармерта сервера")
+		slog.Error("Ошибка в передаче параметра сервера")
 		return false
 	}
 	if cfg.PollTimeout < 1 {
@@ -34,7 +36,7 @@ func (cfg Config) isValid() bool {
 	}
 
 	if cfg.RateLimit < 1 {
-		slog.Error("Количество одновременно исходящих запросов на сервер должна быть больше 0")
+		slog.Error("Количество одновременно исходящих запросов должно быть больше 0")
 		return false
 	}
 	return true
@@ -42,12 +44,20 @@ func (cfg Config) isValid() bool {
 
 func GetConfig() (*Config, bool) {
 	cfg := &Config{}
+
+	// Флаги командной строки
+	var configFilePath string
+	flag.StringVar(&configFilePath, "c", "", "путь к конфигурационному файлу")
+	flag.StringVar(&configFilePath, "config", "", "путь к конфигурационному файлу")
+
 	flag.StringVar(&cfg.AddrServer, "a", "localhost:8080", "server and port to run server")
 	flag.Int64Var(&cfg.PollTimeout, "p", 2, "pool interval")
 	flag.Int64Var(&cfg.ReportTimeout, "r", 10, "report interval")
 	flag.StringVar(&cfg.SecretKey, "k", "", "secret key for encryption")
 	flag.Int64Var(&cfg.RateLimit, "l", 2, "rate limit")
+	flag.StringVar(&cfg.CryptoKey, "crypto-key", "", "public key")
 
+	// Читаем переменные окружения
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		cfg.AddrServer = envRunAddr
 	}
@@ -77,6 +87,44 @@ func GetConfig() (*Config, bool) {
 		}
 	}
 
+	if envCryptoKey := os.Getenv("CRYPTO_KEY"); envCryptoKey != "" {
+		cfg.CryptoKey = envCryptoKey
+	}
+
 	flag.Parse()
+
+	if configFilePath != "" {
+		fileData, err := os.ReadFile(configFilePath)
+		if err != nil {
+			slog.Error("Не удалось открыть конфигурационный файл", "error", err)
+			return nil, false
+		}
+		tmpCfg := &Config{}
+		err = json.Unmarshal(fileData, tmpCfg)
+		if err != nil {
+			slog.Error("Не удалось распарсить конфигурационный файл", "error", err)
+			return nil, false
+		}
+
+		if cfg.AddrServer == "localhost:8080" && tmpCfg.AddrServer != "" {
+			cfg.AddrServer = tmpCfg.AddrServer
+		}
+		if flag.Lookup("p").Value.String() == "2" {
+			cfg.PollTimeout = tmpCfg.PollTimeout
+		}
+		if flag.Lookup("r").Value.String() == "10" {
+			cfg.ReportTimeout = tmpCfg.ReportTimeout
+		}
+		if flag.Lookup("k").Value.String() == "" && tmpCfg.SecretKey != "" {
+			cfg.SecretKey = tmpCfg.SecretKey
+		}
+		if flag.Lookup("l").Value.String() == "2" {
+			cfg.RateLimit = tmpCfg.RateLimit
+		}
+		if flag.Lookup("crypto-key").Value.String() == "" && tmpCfg.CryptoKey != "" {
+			cfg.CryptoKey = tmpCfg.CryptoKey
+		}
+	}
+
 	return cfg, cfg.isValid()
 }

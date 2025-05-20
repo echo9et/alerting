@@ -23,6 +23,7 @@ package main
 
 import (
 	"go/ast"
+	"go/types"
 
 	"github.com/kisielk/errcheck/errcheck"
 	"golang.org/x/tools/go/analysis"
@@ -64,10 +65,27 @@ var noOsExitInMainAnalyzer = &analysis.Analyzer{
 	Run:  runNoOsExitInMain,
 }
 
+func isMainPackage(pkg *types.Package) bool {
+	return pkg != nil && pkg.Name() == "main"
+}
+
+func isCallToOsExit(expr *ast.CallExpr) bool {
+	selExpr, ok := expr.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+
+	pkgIdent, ok := selExpr.X.(*ast.Ident)
+	if !ok || pkgIdent.Name != "os" {
+		return false
+	}
+
+	return selExpr.Sel.Name == "Exit"
+}
+
 func runNoOsExitInMain(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
-		// Проверяем, что файл принадлежит пакету main
-		if pass.Pkg.Name() != "main" {
+		if !isMainPackage(pass.Pkg) {
 			continue
 		}
 
@@ -83,20 +101,13 @@ func runNoOsExitInMain(pass *analysis.Pass) (interface{}, error) {
 					return true
 				}
 
-				selExpr, ok := callExpr.Fun.(*ast.SelectorExpr)
-				if !ok {
-					return true
+				if isCallToOsExit(callExpr) {
+					pass.Reportf(callExpr.Pos(), "вызов os.Exit в функции main пакета main запрещен")
+					return false
 				}
 
-				pkgName, ok := selExpr.X.(*ast.Ident)
-				if !ok || pkgName.Name != "os" || selExpr.Sel.Name != "Exit" {
-					return true
-				}
-
-				pass.Reportf(callExpr.Pos(), "вызов os.Exit в функции main пакета main запрещен")
-				return false
+				return true
 			})
-
 			return false
 		})
 	}
