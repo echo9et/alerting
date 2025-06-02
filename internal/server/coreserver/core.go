@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,7 +19,10 @@ import (
 	"github.com/echo9et/alerting/internal/hashing"
 	"github.com/echo9et/alerting/internal/logger"
 	"github.com/echo9et/alerting/internal/server/handlers"
+	pb "github.com/echo9et/alerting/proto"
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 // applyGzipMiddleware применяет GzipMiddleware к обработчику.
@@ -46,9 +50,17 @@ func applyRequestLogger(h http.HandlerFunc) http.HandlerFunc {
 	return logger.RequestLogger(h)
 }
 
+func applyTrustSubnet(h http.HandlerFunc, subnet *net.IPNet) http.HandlerFunc {
+	if subnet != nil {
+		return TrustedSubnetMiddleware(h, subnet)
+	}
+	return h
+}
+
 // Добавляет к обработчику протоколирование и сжатие в формате gzip.
 // Если указан секретный ключ, оно также добавляет промежуточное программное обеспечение для хэширования.
-func middleware(h http.HandlerFunc, secretKey string, privateKey *rsa.PrivateKey) http.HandlerFunc {
+func middleware(h http.HandlerFunc, secretKey string, privateKey *rsa.PrivateKey, trustedSubnet *net.IPNet) http.HandlerFunc {
+	h = applyTrustSubnet(h, trustedSubnet)
 	h = applyDecryt(h, privateKey)
 	h = applyRequestLogger(h)
 	h = applyHashMiddleware(h, secretKey)
@@ -84,42 +96,42 @@ func HashMiddleware(h http.HandlerFunc, secretKey string) http.HandlerFunc {
 }
 
 // Возвращает маршрутизатор сервера.
-func GetRouter(addrDatabase string, storage entities.Storage, secretKey string, privateKey *rsa.PrivateKey) *chi.Mux {
+func GetRouter(addrDatabase string, storage entities.Storage, secretKey string, privateKey *rsa.PrivateKey, trustedSubnet *net.IPNet) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Get("/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricsHandle(w, r, storage)
-	}, secretKey, privateKey))
+	}, secretKey, privateKey, trustedSubnet))
 
 	router.Post("/update/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricJSONHandle(w, r, storage)
-	}, secretKey, privateKey))
+	}, secretKey, privateKey, trustedSubnet))
 
 	router.Post("/updates/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		WriteMetricsJSONHandle(w, r, storage)
-	}, secretKey, privateKey))
+	}, secretKey, privateKey, trustedSubnet))
 
 	router.Post("/update/{type}/{n, privateKey)ame}/{value}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		setMetricHandle(w, r, storage)
-	}, secretKey, privateKey))
+	}, secretKey, privateKey, trustedSubnet))
 
 	router.Post("/value/", middleware(func(w http.ResponseWriter, r *http.Request) {
 		ReadMetricJSONHandle(w, r, storage)
-	}, secretKey, privateKey))
+	}, secretKey, privateKey, trustedSubnet))
 
 	router.Get("/value/{type}/{name}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		metricHandle(w, r, storage)
-	}, secretKey, privateKey))
+	}, secretKey, privateKey, trustedSubnet))
 
 	router.Get("/ping", middleware(func(w http.ResponseWriter, r *http.Request) {
 		PingDatabase(w, r, addrDatabase, storage)
-	}, secretKey, privateKey))
+	}, secretKey, privateKey, trustedSubnet))
 	return router
 }
 
 // Запуск сервера.
-func Run(addr, addrDatabase string, storage entities.Storage, secretKey string, privateKey *rsa.PrivateKey) error {
-	var server = http.Server{Addr: addr, Handler: GetRouter(addrDatabase, storage, secretKey, privateKey)}
+func Run(addr, addrDatabase string, storage entities.Storage, secretKey string, privateKey *rsa.PrivateKey, trustedSubnet *net.IPNet) error {
+	var server = http.Server{Addr: addr, Handler: GetRouter(addrDatabase, storage, secretKey, privateKey, trustedSubnet)}
 	idleConnsClosed := make(chan struct{})
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt)
@@ -130,6 +142,27 @@ func Run(addr, addrDatabase string, storage entities.Storage, secretKey string, 
 			slog.Error(fmt.Sprintf("HTTP server Shutdown: %v", err))
 		}
 		close(idleConnsClosed)
+	}()
+
+	go func() {
+		listen, err := net.Listen("tcp", ":3200")
+		if err != nil {
+			slog.Error("listent grps:", err)
+			return
+		}
+		s := grpc.NewServer(
+			grpc.RPCCompressor(grpc.NewGZIPCompressor()),
+		)
+		serverGrpc := ServerGrpc{
+			CryptoKey: privateKey,
+			Storage:   storage,
+		}
+		pb.RegisterMetricsServer(s, &serverGrpc)
+
+		slog.Info("Сервер gRPC начал работу")
+		if err := s.Serve(listen); err != nil {
+			slog.Error("listent grps:", err)
+		}
 	}()
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
@@ -263,6 +296,7 @@ func PingDatabase(w http.ResponseWriter, r *http.Request, addr string, s entitie
 	}
 }
 
+// DecryptMiddleware декодирует полученные данные
 func DecryptMiddleware(h http.HandlerFunc, privateKey *rsa.PrivateKey) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := io.ReadAll(r.Body)
@@ -280,6 +314,23 @@ func DecryptMiddleware(h http.HandlerFunc, privateKey *rsa.PrivateKey) http.Hand
 			return
 		}
 		r.Body = io.NopCloser(bytes.NewReader(decrypted))
+		h.ServeHTTP(w, r)
+	})
+}
+
+// TrustedSubnetMiddleware проверяет, входит ли запрос в доверенную сеть
+func TrustedSubnetMiddleware(h http.HandlerFunc, subnet *net.IPNet) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := r.Header.Get("X-Real-IP")
+		if ip == "" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		parsedIP := net.ParseIP(ip)
+		if !subnet.Contains(parsedIP) {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
 		h.ServeHTTP(w, r)
 	})
 }

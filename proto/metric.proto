@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+// protoc --go_out=. --go_opt=paths=source_relative   --go-grpc_out=. --go-grpc_opt=paths=source_relative   proto/metric.proto
+
+package metric;
+
+option go_package = "metric/proto";
+
+message Metric {
+  
+  enum Type {
+    GAUGE    = 0;
+    GOUNTER  = 1;
+  }
+
+  string id    = 1;
+  Type   type  = 2;
+  int64  delta = 3;
+  double value = 4;
+
+}
+
+message UpdateMetricRequest {
+  Metric metric = 1;
+}
+
+message UpdateMetricResponse {
+  string error = 1;
+}
+
+message UpdateMetricsRequest {
+  repeated Metric metrics = 1;
+}
+
+message UpdateMetricsResponse {
+  string error = 1;
+}
+
+message EncryptedMetrics {
+  string encrypted_data = 1;
+}
+
+message UpdateEncrypteMetricsRequest {
+  bytes data = 1;
+}
+
+message UpdateEncrypteMetricsResponse {
+  string error = 1;
+}
+
+service Metrics {
+  rpc UpdateMetric (UpdateMetricRequest ) returns (UpdateMetricResponse );
+  rpc UpdateMetrics(UpdateMetricsRequest) returns (UpdateMetricsResponse);
+  rpc UpdateEncrypteMetrics(UpdateEncrypteMetricsRequest) returns (UpdateEncrypteMetricsResponse);
+}

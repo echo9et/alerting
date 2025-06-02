@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rsa"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/echo9et/alerting/internal/entities"
@@ -55,8 +56,15 @@ func main() {
 			panic(err)
 		}
 	}
+	var subnet *net.IPNet
+	if cfg.TrustedSubnet != "" {
+		_, subnet, err = net.ParseCIDR(cfg.TrustedSubnet)
+		if err != nil {
+			panic(err)
+		}
+	}
 
-	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store, cfg.SecretKey, privateKey); err != nil {
+	if err := coreserver.Run(cfg.AddrServer, cfg.AddrDatabase, store, cfg.SecretKey, privateKey, subnet); err != nil {
 		panic(err)
 	}
 

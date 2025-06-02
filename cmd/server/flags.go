@@ -20,6 +20,7 @@ type Config struct {
 	RestoreData   bool   `json:"restore,omitempty"`
 	SecretKey     string `json:"key,omitempty"`
 	CryptoKey     string `json:"crypto_key,omitempty"`
+	TrustedSubnet string `json:"trusted_subnet,omitempty"`
 }
 
 func ParseFlags() (*Config, error) {
@@ -38,6 +39,7 @@ func ParseFlags() (*Config, error) {
 	flag.BoolVar(&cfg.RestoreData, "r", true, "is restor data from file")
 	flag.StringVar(&cfg.SecretKey, "k", "", "secret key for encryption")
 	flag.StringVar(&cfg.CryptoKey, "crypto-key", "", "privat key")
+	flag.StringVar(&cfg.TrustedSubnet, "t", "", "sunbnet clients")
 
 	// Переменные окружения
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
@@ -73,6 +75,10 @@ func ParseFlags() (*Config, error) {
 
 	if envCryptoKey := os.Getenv("CRYPTO-KEY"); envCryptoKey != "" {
 		cfg.CryptoKey = envCryptoKey
+	}
+
+	if envTrustedSubnet := os.Getenv("TRUSTED_SUBNET"); envTrustedSubnet != "" {
+		cfg.TrustedSubnet = envTrustedSubnet
 	}
 
 	flag.Parse()
@@ -120,6 +126,9 @@ func ParseFlags() (*Config, error) {
 		}
 		if flag.Lookup("crypto-key").Value.String() == "" && tmpCfg.CryptoKey != "" {
 			cfg.CryptoKey = tmpCfg.CryptoKey
+		}
+		if flag.Lookup("trusted_subnet").Value.String() == "" && tmpCfg.CryptoKey != "" {
+			cfg.TrustedSubnet = tmpCfg.TrustedSubnet
 		}
 	}
 
