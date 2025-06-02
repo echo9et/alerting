@@ -18,7 +18,7 @@ type Config struct {
 	SecretKey     string `json:"key,omitempty"`
 	RateLimit     int64  `json:"rate_limit,omitempty"`
 	CryptoKey     string `json:"crypto_key,omitempty"`
-	UseGRPC       bool   `json:"use_grpc, omitempty"`
+	UseGRPC       bool   `json:"use_grpc,omitempty"`
 }
 
 func (cfg Config) isValid() bool {

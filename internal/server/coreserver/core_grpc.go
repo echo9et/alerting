@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/gob"
+	"fmt"
 	"log/slog"
 
 	"github.com/echo9et/alerting/internal/entities"
@@ -37,7 +38,7 @@ func (s *ServerGrpc) decryptData(encryptedData []byte) ([]byte, error) {
 
 	decrypted, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, s.CryptoKey, data, nil)
 	if err != nil {
-		slog.Error("Ошибка при дешифрование информации %s", err)
+		slog.Error(fmt.Sprintf("Ошибка при дешифрование информации %s", err))
 		return decrypted, err
 	}
 	return decrypted, nil
@@ -70,7 +71,7 @@ func (s *ServerGrpc) UpdateEncrypteMetrics(ctx context.Context, in *pb.UpdateEnc
 	decrypted, err := s.decryptData(in.Data)
 
 	if err != nil {
-		slog.Error("UpdateEncrypteMetricsr:", err)
+		slog.Error(fmt.Sprintf("UpdateEncrypteMetricsr: %s", err))
 		return &response, err
 	}
 
@@ -79,7 +80,7 @@ func (s *ServerGrpc) UpdateEncrypteMetrics(ctx context.Context, in *pb.UpdateEnc
 	dec := gob.NewDecoder(in_reader)
 
 	if err := dec.Decode(&metrics); err != nil {
-		slog.Error("UpdateEncrypteMetricsr:", err)
+		slog.Error(fmt.Sprintf("UpdateEncrypteMetricsr: %s", err))
 		return &response, err
 	}
 

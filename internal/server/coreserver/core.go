@@ -147,7 +147,7 @@ func Run(addr, addrDatabase string, storage entities.Storage, secretKey string, 
 	go func() {
 		listen, err := net.Listen("tcp", ":3200")
 		if err != nil {
-			slog.Error("listent grps:", err)
+			slog.Error(fmt.Sprintf("listent grps: %s", err))
 			return
 		}
 		s := grpc.NewServer(
@@ -161,7 +161,7 @@ func Run(addr, addrDatabase string, storage entities.Storage, secretKey string, 
 
 		slog.Info("Сервер gRPC начал работу")
 		if err := s.Serve(listen); err != nil {
-			slog.Error("listent grps:", err)
+			slog.Error(fmt.Sprintf("listent grps: %s", err))
 		}
 	}()
 
@@ -301,7 +301,7 @@ func DecryptMiddleware(h http.HandlerFunc, privateKey *rsa.PrivateKey) http.Hand
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
-			slog.Error("Ошибка при чтение информации из запроса %s", err)
+			slog.Error(fmt.Sprintf("Ошибка при чтение информации из запроса %s", err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -309,7 +309,7 @@ func DecryptMiddleware(h http.HandlerFunc, privateKey *rsa.PrivateKey) http.Hand
 
 		decrypted, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, data, nil)
 		if err != nil {
-			slog.Error("Ошибка при дешифрование информации %s", err)
+			slog.Error(fmt.Sprintf("Ошибка при дешифрование информации %s", err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
