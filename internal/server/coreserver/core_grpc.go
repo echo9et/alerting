@@ -76,8 +76,8 @@ func (s *ServerGrpc) UpdateEncrypteMetrics(ctx context.Context, in *pb.UpdateEnc
 	}
 
 	var metrics []*pb.Metric
-	in_reader := bytes.NewReader(decrypted)
-	dec := gob.NewDecoder(in_reader)
+	inReader := bytes.NewReader(decrypted)
+	dec := gob.NewDecoder(inReader)
 
 	if err := dec.Decode(&metrics); err != nil {
 		slog.Error(fmt.Sprintf("UpdateEncrypteMetricsr: %s", err))

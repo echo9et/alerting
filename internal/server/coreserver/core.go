@@ -150,9 +150,7 @@ func Run(addr, addrDatabase string, storage entities.Storage, secretKey string, 
 			slog.Error(fmt.Sprintf("listent grps: %s", err))
 			return
 		}
-		s := grpc.NewServer(
-			grpc.RPCCompressor(grpc.NewGZIPCompressor()),
-		)
+		s := grpc.NewServer()
 		serverGrpc := ServerGrpc{
 			CryptoKey: privateKey,
 			Storage:   storage,
