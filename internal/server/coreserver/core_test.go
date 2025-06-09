@@ -79,7 +79,7 @@ func TestStatusHandler(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		ts := httptest.NewServer(GetRouter("", s, "", nil))
+		ts := httptest.NewServer(GetRouter("", s, "", nil, nil))
 		defer ts.Close()
 		t.Run(test.name, func(t *testing.T) {
 			resp, _ := testRequest(t, ts, test.want)

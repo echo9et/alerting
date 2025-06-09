@@ -33,7 +33,7 @@ func GetPubKey(pathFile string) (*rsa.PublicKey, error) {
 }
 
 func GetPrivateKey(pathFile string) (*rsa.PrivateKey, error) {
-	pemData, _ := os.ReadFile("private_key.pem")
+	pemData, _ := os.ReadFile(pathFile)
 	block, _ := pem.Decode(pemData)
 	if block == nil || block.Type != "RSA PRIVATE KEY" {
 		return nil, fmt.Errorf("failed to decode private key PEM")

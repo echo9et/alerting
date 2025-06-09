@@ -26,7 +26,7 @@ func main() {
 		panic("Не верно проинцелизирован конфиг файл")
 	}
 
-	a := client.NewAgent(config.AddrServer)
+	a := client.NewAgent(config.AddrServer, config.SelfIP, config.UseGRPC)
 	r := time.Duration(config.ReportTimeout) * time.Second
 	p := time.Duration(config.PollTimeout) * time.Second
 

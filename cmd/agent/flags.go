@@ -12,11 +12,13 @@ import (
 
 type Config struct {
 	AddrServer    string `json:"address,omitempty"`
+	SelfIP        string `json:"selfIP,omitempty"`
 	PollTimeout   int64  `json:"poll_interval,omitempty"`
 	ReportTimeout int64  `json:"report_interval,omitempty"`
 	SecretKey     string `json:"key,omitempty"`
 	RateLimit     int64  `json:"rate_limit,omitempty"`
 	CryptoKey     string `json:"crypto_key,omitempty"`
+	UseGRPC       bool   `json:"use_grpc,omitempty"`
 }
 
 func (cfg Config) isValid() bool {
@@ -56,10 +58,17 @@ func GetConfig() (*Config, bool) {
 	flag.StringVar(&cfg.SecretKey, "k", "", "secret key for encryption")
 	flag.Int64Var(&cfg.RateLimit, "l", 2, "rate limit")
 	flag.StringVar(&cfg.CryptoKey, "crypto-key", "", "public key")
+	flag.StringVar(&cfg.SelfIP, "self-ip", "127.0.0.1", "your ip address")
+	flag.BoolVar(&cfg.UseGRPC, "g", false, "use grpc")
 
 	// Читаем переменные окружения
 	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
 		cfg.AddrServer = envRunAddr
+	}
+
+	// Читаем переменные окружения
+	if envSelfIP := os.Getenv("SELF_IP"); envSelfIP != "" {
+		cfg.SelfIP = envSelfIP
 	}
 
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
@@ -91,6 +100,10 @@ func GetConfig() (*Config, bool) {
 		cfg.CryptoKey = envCryptoKey
 	}
 
+	if envUseGRPC := os.Getenv("USE_GRPC"); envUseGRPC != "" {
+		cfg.UseGRPC = envUseGRPC == "true"
+	}
+
 	flag.Parse()
 
 	if configFilePath != "" {
@@ -108,6 +121,9 @@ func GetConfig() (*Config, bool) {
 
 		if cfg.AddrServer == "localhost:8080" && tmpCfg.AddrServer != "" {
 			cfg.AddrServer = tmpCfg.AddrServer
+		}
+		if cfg.SelfIP == "127.0.0.1" && tmpCfg.AddrServer != "" {
+			cfg.SelfIP = tmpCfg.SelfIP
 		}
 		if flag.Lookup("p").Value.String() == "2" {
 			cfg.PollTimeout = tmpCfg.PollTimeout
